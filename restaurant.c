@@ -44,6 +44,9 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas){
         //! no esta bien, porque las mesas de 4 tienen un vector de coordenadas porque necesita 4 coordenadas. lo arreglo mañana desp de analisis.
         if((i < 20) && (j < 20) && ((i + 1) < 20) && ((j + 1) < 20)){
             coordenada_t coordenada_mesa = {i, j};
+            // terminar esto:
+            //coordenada_t coordenada_mesa_2 = {i, j+1};
+            //coordenada_t coordenadas_mesa_compartidas[MAX_COMENSALES] = {coordenada_mesa, coordenada_mesa_2};
             mesa_t mesa;
             crear_mesa(&coordenada_mesa, mesas, &cantidad_mesas, MAX_COMENSALES);
             contador_mesas_creadas += 1;
