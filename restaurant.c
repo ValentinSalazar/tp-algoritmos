@@ -41,6 +41,7 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas){
     while (contador_mesas_creadas < CANTIDAD_MESAS_COMPARTIDAS){
         generar_coordenadas_random(&i, &j);
 
+        //! no esta bien, porque las mesas de 4 tienen un vector de coordenadas porque necesita 4 coordenadas. lo arreglo mañana desp de analisis.
         if((i < 20) && (j < 20) && ((i + 1) < 20) && ((j + 1) < 20)){
             coordenada_t coordenada_mesa = {i, j};
             mesa_t mesa;
