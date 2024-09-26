@@ -4,7 +4,7 @@
 #include "restaurant.c"
 
 int main(){
-
+    system("clear");
     srand((unsigned)time(NULL));
 
     juego_t juego;

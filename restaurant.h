@@ -11,7 +11,7 @@
 #define MAX_BANDEJA 10
 #define MAX_HERRAMIENTAS 20
 #define MAX_OBSTACULOS 20
-#define MAX_MESAS 20
+#define MAX_MESAS 10
 
 #define MIN_COMENSALES 1
 
