@@ -26,6 +26,22 @@ void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
     }
 }
 
+
+
+
+// bool es_coordenada_ocupada(int* fila, int* columna, char terreno[MAX_FILAS][MAX_COLUMNAS]){
+//     return(terreno[*fila][*columna] != ' ');
+// }
+
+// bool esta_dentro_limite(int* fila, int* columna){
+//     return(*fila < 20 && *columna < 20);
+// }
+
+// bool es_coordenada_valida(coordenada_t coordenada, char terreno[MAX_FILAS][MAX_COLUMNAS]){
+//     return((coordenada.fil < 20 && coordenada.col < 20) && (terreno[coordenada.fil][coordenada.col] == ' '));
+// }
+
+
 // Pre: La fila y la columna deben encontrarse entre 0 y 20
 // Post: Se genera un numero random para cada indice [i, j]
 coordenada_t generar_coordenada_mesa_compartida(char terreno[MAX_FILAS][MAX_COLUMNAS]){
@@ -46,30 +62,45 @@ coordenada_t generar_coordenada_mesa_compartida(char terreno[MAX_FILAS][MAX_COLU
 }
 
 
-// bool es_coordenada_ocupada(int* fila, int* columna, char terreno[MAX_FILAS][MAX_COLUMNAS]){
-//     return(terreno[*fila][*columna] != ' ');
-// }
-
-// bool esta_dentro_limite(int* fila, int* columna){
-//     return(*fila < 20 && *columna < 20);
-// }
-
-// bool es_coordenada_valida(coordenada_t coordenada, char terreno[MAX_FILAS][MAX_COLUMNAS]){
-//     return((coordenada.fil < 20 && coordenada.col < 20) && (terreno[coordenada.fil][coordenada.col] == ' '));
-// }
-
-
-
-
 int distancia_a_mesa(coordenada_t primer_coordenada, coordenada_t segunda_coordenada){
     double distancia = 0;
 
     distancia = sqrt(pow(primer_coordenada.fil - segunda_coordenada.fil, 2) + pow(primer_coordenada.col - segunda_coordenada.col, 2));
-    printf("distancia:%f\n", distancia);
 
 
     return (int)distancia;
 }
+
+bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t mesa_nueva){
+    bool distancia_valida = true;
+    if(*cantidad_mesas == 0){
+        distancia_valida = true;
+    } else {
+        bool hay_posicion_invalida = false;
+        int i = 0;
+        int j = 0;
+        int k = 0;
+        while(i < *cantidad_mesas && !hay_posicion_invalida){
+            while(j < mesas[i].cantidad_lugares && !hay_posicion_invalida){
+                while(k < mesa_nueva.cantidad_lugares && !hay_posicion_invalida){
+                    if(distancia_a_mesa(mesas[i].posicion[j], mesa_nueva.posicion[k]) <= 1) { 
+                        distancia_valida = false;
+                        hay_posicion_invalida = true;
+                    }
+                    k++;
+                }
+                k = 0;
+                j++;
+            }
+            j = 0;
+            i++;
+        }
+
+    }
+
+    return distancia_valida;
+}
+
 
 mesa_t crear_mesa_compartida(coordenada_t coordenada){
     
@@ -102,6 +133,16 @@ mesa_t crear_mesa_compartida(coordenada_t coordenada){
     return mesa_creada;
 }
 
+mesa_t crear_mesa_individual(coordenada_t coordenada){
+    mesa_t mesa_nueva;
+    mesa_nueva.cantidad_lugares = 0;
+    mesa_nueva.cantidad_comensales = MIN_COMENSALES;
+    mesa_nueva.posicion[mesa_nueva.cantidad_lugares] = coordenada;
+    mesa_nueva.cantidad_lugares += 1;
+
+
+    return mesa_nueva;
+}
 
 void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < mesa.cantidad_lugares; i++) {
@@ -110,32 +151,6 @@ void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
 }
 
 
-
-bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t mesa_nueva){
-    bool distancia_valida = true;
-    if(*cantidad_mesas == 0){
-        distancia_valida = true;
-    } else {
-        bool hay_posicion_invalida = false;
-        int i = 1;
-        int j = 0;
-        while(i < *cantidad_mesas && !hay_posicion_invalida){
-            while(j < mesas[i].cantidad_lugares && !hay_posicion_invalida){
-                if(distancia_a_mesa(mesas[i].posicion[j], mesa_nueva.posicion[j]) <= 1) {
-                    distancia_valida = false;
-                    hay_posicion_invalida = true;
-                    
-                }
-                j++;
-            }
-            i++;
-            j = 0;
-        }
-
-    }
-
-    return distancia_valida;
-}
 
 
 // Pre: Es necesario que las mesas, su cantidad y el terreno esten inicializados.
@@ -153,8 +168,18 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terren
             *cantidad_mesas += 1;
             contador_mesas_creadas += 1;
         }
-        
-    }  
+    }
+    contador_mesas_creadas = 0;
+    while(contador_mesas_creadas < CANTIDAD_MESAS_INDIVIDUALES) {
+        coordenada_t coordenada_nueva_mesa = generar_coordenada_mesa_compartida(terreno);
+        mesa_t mesa_generada = crear_mesa_individual(coordenada_nueva_mesa);
+        if(es_distancia_valida(mesas, cantidad_mesas, mesa_generada)) {
+            asignar_mesa(mesa_generada, terreno);
+            mesas[*cantidad_mesas] = mesa_generada;
+            *cantidad_mesas += 1;
+            contador_mesas_creadas += 1;
+        }
+    }
     
 }
 
