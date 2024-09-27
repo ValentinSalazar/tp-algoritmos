@@ -6,6 +6,10 @@
 const int CANTIDAD_MESAS_INDIVIDUALES = 6;
 const int CANTIDAD_MESAS_COMPARTIDAS = 4;
 
+const int CANTIDAD_MONEDAS = 8;
+const int CANTIDAD_PATINES = 5;
+const int CANTIDAD_CHARCOS = 5;
+
 
 void inicializar_terreno(char terreno_resto[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < MAX_FILAS; i++){
@@ -44,7 +48,7 @@ void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
 
 // Pre: La fila y la columna deben encontrarse entre 0 y 20
 // Post: Se genera un numero random para cada indice [i, j]
-coordenada_t generar_coordenada_mesa_compartida(char terreno[MAX_FILAS][MAX_COLUMNAS]){
+coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada = {-1, -1};
     bool flag = true;
 
@@ -146,7 +150,7 @@ mesa_t crear_mesa_individual(coordenada_t coordenada){
 
 void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < mesa.cantidad_lugares; i++) {
-        terreno[mesa.posicion[i].fil][mesa.posicion[i].col] = 'T';
+        terreno[mesa.posicion[i].fil][mesa.posicion[i].col] = MESA;
     }
 }
 
@@ -159,7 +163,7 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terren
 
     int contador_mesas_creadas = 0;
     while(contador_mesas_creadas < CANTIDAD_MESAS_COMPARTIDAS) {
-        coordenada_t coordenada_nueva_mesa = generar_coordenada_mesa_compartida(terreno);
+        coordenada_t coordenada_nueva_mesa = generar_coordenada_random(terreno);
         mesa_t mesa_generada = crear_mesa_compartida(coordenada_nueva_mesa);
 
         if(es_distancia_valida(mesas, cantidad_mesas, mesa_generada)) {
@@ -171,7 +175,7 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terren
     }
     contador_mesas_creadas = 0;
     while(contador_mesas_creadas < CANTIDAD_MESAS_INDIVIDUALES) {
-        coordenada_t coordenada_nueva_mesa = generar_coordenada_mesa_compartida(terreno);
+        coordenada_t coordenada_nueva_mesa = generar_coordenada_random(terreno);
         mesa_t mesa_generada = crear_mesa_individual(coordenada_nueva_mesa);
         if(es_distancia_valida(mesas, cantidad_mesas, mesa_generada)) {
             asignar_mesa(mesa_generada, terreno);
@@ -183,8 +187,32 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terren
     
 }
 
-//! IMPORTANTE
-// A la hora de inicializar las demas cosas, antes debo crear una funcion que me verifique las posiciones de las mesas.
+
+
+void inicializar_cocina(char terreno[MAX_FILAS][MAX_COLUMNAS]){
+    coordenada_t coordenada = generar_coordenada_random(terreno);
+
+    cocina_t cocina;
+    cocina.posicion = coordenada;
+
+    terreno[cocina.posicion.fil][cocina.posicion.col] = COCINA;
+}
+
+void inicializar_linguini(char terreno[MAX_FILAS][MAX_COLUMNAS]){
+    coordenada_t coordenada_linguini = generar_coordenada_random(terreno);
+
+    terreno[coordenada_linguini.fil][coordenada_linguini.col] = PERSONAJE;
+}
+
+void inicializar_objeto(objeto_t objeto, char terreno[MAX_FILAS][MAX_COLUMNAS]){
+    coordenada_t coordenada_objeto = generar_coordenada_random(terreno);
+
+    objeto.posicion = coordenada_objeto;
+
+    terreno[objeto.posicion.fil][objeto.posicion.col] = objeto.tipo;
+    
+
+}
 
 void inicializar_juego(juego_t* juego){
 
@@ -197,18 +225,45 @@ void inicializar_juego(juego_t* juego){
     int cantidad_mesas = 0;
     
     inicializar_mesas(mesas, &cantidad_mesas, terreno);
-    imprimir_terreno(terreno);
 
     // segundo cocina
+    inicializar_cocina(terreno);
+    
 
     // tercero linguini
+    inicializar_linguini(terreno);
+    
 
     // cuarto mopa
+    objeto_t mopa;
+    mopa.tipo = MOPA;
+    inicializar_objeto(mopa, terreno);
+    
+    
+
 
     // quinto monedas
+    for(int i = 0; i < CANTIDAD_MONEDAS; i++) {
+        objeto_t moneda;
+        moneda.tipo = MONEDA;
+        inicializar_objeto(moneda, terreno);
+    }
+
 
     // sexto patines
+    for(int i = 0; i < CANTIDAD_PATINES; i++) {
+        objeto_t patines;
+        patines.tipo = PATINES;
+        inicializar_objeto(patines, terreno);
+    }
+
 
     // septimo charcos
+    for(int i = 0; i < CANTIDAD_CHARCOS; i++) {
+        objeto_t charco;
+        charco.tipo = CHARCOS;
+        inicializar_objeto(charco, terreno);
+    }
+    imprimir_terreno(terreno);
 }
 

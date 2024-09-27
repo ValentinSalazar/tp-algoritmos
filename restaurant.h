@@ -13,10 +13,24 @@
 #define MAX_OBSTACULOS 20
 #define MAX_MESAS 10
 
+#define COCINA 'C'
+#define MESA 'T'
+#define PERSONAJE 'L'
+#define MOPA 'O'
+#define MONEDA 'M'
+#define PATINES 'P'
+#define CHARCOS 'H'
+
 #define MIN_COMENSALES 1
 
 #define MAX_FILAS 20
 #define MAX_COLUMNAS 20
+
+
+#define MOVIMIENTO_ARRIBA 'W'
+#define MOVIMIENTO_ABAJO 'S'
+#define MOVIMIENTO_DER 'D'
+#define MOVIMIENTO_IZQ 'I'
 
 typedef struct coordenada {
     int fil;
