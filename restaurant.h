@@ -27,10 +27,10 @@
 #define MAX_COLUMNAS 20
 
 
-#define MOVIMIENTO_ARRIBA 'W'
-#define MOVIMIENTO_ABAJO 'S'
-#define MOVIMIENTO_DER 'D'
-#define MOVIMIENTO_IZQ 'I'
+#define MOVER_ARRIBA 'W'
+#define MOVER_ABAJO 'S'
+#define MOVER_DER 'D'
+#define MOVER_IZQ 'I'
 
 typedef struct coordenada {
     int fil;
@@ -77,7 +77,7 @@ typedef struct juego {
     mozo_t mozo;
     mesa_t mesas[MAX_MESAS];
     int cantidad_mesas; // tope de mesas
-    objeto_t herramientas[MAX_HERRAMIENTAS];
+    objeto_t herramientas[MAX_HERRAMIENTAS]; // array de objetos.
     int cantidad_herramientas; // tope de herramientas
     objeto_t obstaculos[MAX_OBSTACULOS];
     int cantidad_obstaculos; // tope de obstaculos
