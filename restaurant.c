@@ -255,7 +255,7 @@ void inicializar_juego(juego_t* juego){
    
 }
 
-char realizar_accion(){
+char pedir_accion(){
     char jugada;
     printf("Realiza una jugada (mover el jugador o agarrar/soltar mopa): ");
     scanf(" %c", &jugada);
