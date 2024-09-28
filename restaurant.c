@@ -297,7 +297,6 @@ void mostrar_juego(juego_t juego) {
 
 
     terreno[juego.cocina.posicion.fil][juego.cocina.posicion.col] = COCINA;
-    printf("cocina: fil:%i - col:%i\n", juego.cocina.posicion.fil, juego.cocina.posicion.col);
 
     terreno[juego.mozo.posicion.fil][juego.mozo.posicion.col] = PERSONAJE;
 
@@ -311,6 +310,7 @@ void mostrar_juego(juego_t juego) {
     }
 
     imprimir_terreno(terreno);
+    printf("\n");
 
     printf("Cantidad de movimientos: %i\n", juego.movimientos);
     printf("Cantidad Pedidos: %i\n", juego.mozo.cantidad_pedidos);
