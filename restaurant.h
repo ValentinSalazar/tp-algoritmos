@@ -12,6 +12,8 @@
 #define MAX_HERRAMIENTAS 20
 #define MAX_OBSTACULOS 20
 #define MAX_MESAS 10
+#define MAX_MOVIMIENTOS 200
+#define MAX_MOVIMIENTOS 200
 
 #define COCINA 'C'
 #define MESA 'T'
@@ -30,7 +32,8 @@
 #define MOVER_ARRIBA 'W'
 #define MOVER_ABAJO 'S'
 #define MOVER_DER 'D'
-#define MOVER_IZQ 'I'
+#define MOVER_IZQ 'A'
+#define ACCION_MOPA 'O'
 
 typedef struct coordenada {
     int fil;

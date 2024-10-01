@@ -19,7 +19,6 @@ void inicializar_terreno(char terreno_resto[MAX_FILAS][MAX_COLUMNAS]){
     }
 }
 
-
 void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
 
     for(int i = 0; i < MAX_FILAS; i++) {
@@ -31,13 +30,6 @@ void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
     }
 }
 
-// void mostrar_juego(juego_t* juego){
-    
-    
-// }
-
-// Pre: La fila y la columna deben encontrarse entre 0 y 20
-// Post: Se genera un numero random para cada indice [i, j]
 coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada = {-1, -1};
     bool flag = true;
@@ -45,7 +37,7 @@ coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
     while(flag) {
         int fila = rand() % (MAX_FILAS - 1) + 0;
         int columna = rand() % (MAX_COLUMNAS - 1) + 0;
-        if((terreno[fila][columna] == ' ') && (fila < 19 && columna < 19)) {
+        if((terreno[fila][columna] == ' ') && (fila < (MAX_FILAS - 1) && columna < (MAX_COLUMNAS - 1))) {
             coordenada.fil = fila;
             coordenada.col = columna;
             flag = false;
@@ -54,7 +46,6 @@ coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
 
     return coordenada;
 }
-
 
 int distancia_a_mesa(coordenada_t primer_coordenada, coordenada_t segunda_coordenada){
     double distancia = 0;
@@ -94,7 +85,6 @@ bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t me
 
     return distancia_valida;
 }
-
 
 mesa_t crear_mesa_compartida(coordenada_t coordenada){
     mesa_t mesa_creada;
@@ -172,8 +162,6 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terren
     }
     
 }
-
-
 
 void inicializar_cocina(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada = generar_coordenada_random(terreno);
@@ -255,59 +243,117 @@ void inicializar_juego(juego_t* juego){
    
 }
 
-char pedir_accion(){
-    char jugada;
-    printf("Realiza una jugada (mover el jugador o agarrar/soltar mopa): ");
-    scanf(" %c", &jugada);
+bool es_jugada_valida(char jugada){
+    return jugada == MOVER_ARRIBA || jugada == MOVER_ABAJO || jugada == MOVER_DER || jugada == MOVER_IZQ || jugada == ACCION_MOPA;
+}
 
-    bool accion_valida = jugada != MOVER_ARRIBA || jugada != MOVER_ABAJO || jugada != MOVER_DER || jugada != MOVER_IZQ;
-
-    while(!accion_valida){
-        printf("Acción invalida, por favor realizá un movimiento correcto (mover jugador o agarrar/soltar mopa).\n");
-        scanf(" %c", &jugada);
-    }
-
-    return jugada;
+bool esta_dentro_limite(coordenada_t coordenada){
+    return(coordenada.fil < (MAX_FILAS -1) && coordenada.col < (MAX_COLUMNAS - 1));
 }
 
 
-// bool es_coordenada_ocupada(int* fila, int* columna, char terreno[MAX_FILAS][MAX_COLUMNAS]){
-//     return(terreno[*fila][*columna] != ' ');
-// }
+void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
 
-// bool esta_dentro_limite(int* fila, int* columna){
-//     return(*fila < 20 && *columna < 20);
-// }
+    for(int i = 0; i < juego->cantidad_mesas; i++){
+        for(int p = 0; p < juego->mesas[i].cantidad_lugares; p++){
+            terreno[juego->mesas[i].posicion[p].fil][juego->mesas[i].posicion[p].col] = MESA;
+        }
+    }
+    terreno[juego->cocina.posicion.fil][juego->cocina.posicion.col] = COCINA;
+    terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = PERSONAJE;
 
-// bool es_coordenada_valida(coordenada_t coordenada, char terreno[MAX_FILAS][MAX_COLUMNAS]){
-//     return((coordenada.fil < 20 && coordenada.col < 20) && (terreno[coordenada.fil][coordenada.col] == ' '));
-// }
+    for(int i = 0; i < juego->cantidad_herramientas; i++){
+        terreno[juego->herramientas[i].posicion.fil][juego->herramientas[i].posicion.col] = juego->herramientas[i].tipo;
+    }
+
+
+    for(int j = 0; j < juego->cantidad_obstaculos; j++) {
+        terreno[juego->obstaculos[j].posicion.fil][juego->obstaculos[j].posicion.col] = juego->obstaculos[j].tipo;
+    }
+}
+
+void mover_arriba(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
+    coordenada_t coordenada_accion = {juego->mozo.posicion.fil - 1, juego->mozo.posicion.col};
+    char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
+    if((posicion_nueva == ' ' || posicion_nueva == 'O') && esta_dentro_limite(coordenada_accion)) {
+        juego->mozo.posicion.fil = coordenada_accion.fil;
+        juego->movimientos += 1;
+    }
+}
+
+void mover_abajo(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
+    coordenada_t coordenada_accion = {juego->mozo.posicion.fil + 1, juego->mozo.posicion.col};
+    char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
+    if(posicion_nueva == ' ' && esta_dentro_limite(coordenada_accion)) {
+        juego->mozo.posicion.fil = coordenada_accion.fil;
+        juego->movimientos += 1;
+    }
+}
+
+void mover_derecha(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
+    coordenada_t coordenada_accion = {juego->mozo.posicion.fil, juego->mozo.posicion.col + 1};
+    if(terreno[coordenada_accion.fil][coordenada_accion.col] && esta_dentro_limite(coordenada_accion)) {
+        juego->mozo.posicion.col = coordenada_accion.col;
+        juego->movimientos += 1;
+    }
+}
+
+void mover_izquierda(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
+    coordenada_t coordenada_accion = {juego->mozo.posicion.fil, juego->mozo.posicion.col - 1};
+    char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
+    if(terreno[coordenada_accion.fil][coordenada_accion.col] && esta_dentro_limite(coordenada_accion)) {
+        juego->mozo.posicion.col = coordenada_accion.col;
+        juego->movimientos += 1;
+    }
+}
+
+void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
+    for(int i = 0; i < juego->cantidad_herramientas; i++){
+        bool misma_coordenada_mopa = juego->mozo.posicion.fil == juego->herramientas[i].posicion.fil && juego->mozo.posicion.col == juego->herramientas[i].posicion.col;
+        bool es_mopa = juego->herramientas[i].tipo == MOPA;
+        if(es_mopa && misma_coordenada_mopa) {
+            juego->mozo.tiene_mopa = true;
+            juego->herramientas[i].posicion.fil = ' ';
+            juego->herramientas[i].posicion.col = ' ';
+            juego->mozo.posicion.fil += 1;
+        }
+    }
+}
+
+void realizar_jugada(juego_t* juego, char accion){
+
+    char terreno[MAX_FILAS][MAX_COLUMNAS];
+    inicializar_terreno(terreno);
+    posicionar_elementos_terreno(juego, terreno);
+
+    if(accion == ACCION_MOPA){
+       accion_de_mopa(terreno, juego); 
+    }
+
+    if(accion == MOVER_ARRIBA) {
+        mover_arriba(terreno, juego);
+    }
+
+    if(accion == MOVER_ABAJO) {
+        mover_abajo(terreno, juego);
+    }
+
+    if(accion == MOVER_DER) {
+        mover_derecha(terreno, juego);
+    }
+
+    if(accion == MOVER_IZQ) {
+        mover_izquierda(terreno, juego);
+    }
+}
+
+
 
 
 void mostrar_juego(juego_t juego) {
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
-
-    // mezas
-    for(int i = 0; i < juego.cantidad_mesas; i++){
-        for(int p = 0; p < juego.mesas[i].cantidad_lugares; p++){
-            terreno[juego.mesas[i].posicion[p].fil][juego.mesas[i].posicion[p].col] = MESA;
-        }
-    }
-
-
-    terreno[juego.cocina.posicion.fil][juego.cocina.posicion.col] = COCINA;
-
-    terreno[juego.mozo.posicion.fil][juego.mozo.posicion.col] = PERSONAJE;
-
-    // herramientas
-    for(int i = 0; i < juego.cantidad_herramientas; i++){
-        terreno[juego.herramientas[i].posicion.fil][juego.herramientas[i].posicion.col] = juego.herramientas->tipo;
-    }
-
-    for(int j = 0; j < juego.cantidad_obstaculos; j++) {
-        terreno[juego.obstaculos[j].posicion.fil][juego.obstaculos[j].posicion.fil] = juego.obstaculos->tipo;
-    }
+    posicionar_elementos_terreno(&juego, terreno);
 
     imprimir_terreno(terreno);
     printf("\n");
@@ -317,3 +363,18 @@ void mostrar_juego(juego_t juego) {
     printf("Dinero: %i\n", juego.dinero);
     printf("herramientas: %i\n", juego.cantidad_herramientas);
 }
+
+
+
+
+
+
+
+// bool es_coordenada_ocupada(int* fila, int* columna, char terreno[MAX_FILAS][MAX_COLUMNAS]){
+//     return(terreno[*fila][*columna] != ' ');
+// }
+
+
+// bool es_coordenada_valida(coordenada_t coordenada, char terreno[MAX_FILAS][MAX_COLUMNAS]){
+//     return((coordenada.fil < 20 && coordenada.col < 20) && (terreno[coordenada.fil][coordenada.col] == ' '));
+// }
