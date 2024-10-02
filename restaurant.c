@@ -10,7 +10,12 @@ const int CANTIDAD_MONEDAS = 8;
 const int CANTIDAD_PATINES = 5;
 const int CANTIDAD_CHARCOS = 5;
 
+const int ESCONDER_MOPA = 200;
 
+const int MONEDAS_GANAR_JUEGO = 150000;
+
+// Pre: 
+// Post: Inicializa todas las posiciones del terreno con un espacio vacio -> ' '
 void inicializar_terreno(char terreno_resto[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < MAX_FILAS; i++){
         for(int j = 0; j < MAX_COLUMNAS; j++){
@@ -19,6 +24,8 @@ void inicializar_terreno(char terreno_resto[MAX_FILAS][MAX_COLUMNAS]){
     }
 }
 
+// Pre: Debe estar previamente inicializado.
+// Post: Recorre la matriz del terreno e imprime todas sus posiciones.
 void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
 
     for(int i = 0; i < MAX_FILAS; i++) {
@@ -30,6 +37,20 @@ void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
     }
 }
 
+
+// Pre:
+// Post: Imprime los movimientos validos que puede realizar el jugador.
+void imprimir_movimientos_validos(){
+    printf("Mover arriba (W)\n");
+    printf("Mover abajo (S)\n");
+    printf("Mover derecha (D)\n");
+    printf("Mover Izquierda (A)\n");
+}
+
+
+// Pre: El terreno debe estar previamente inicializado.
+// Post: Genera una coordenada random dentro de los limites de la matriz y en una posición vacía.
+//       Luego, esa coordenada la devuelvo.
 coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada = {-1, -1};
     bool flag = true;
@@ -47,6 +68,9 @@ coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
     return coordenada;
 }
 
+
+// Pre: Las coordenadas deben estar inicializadas.
+// Post: Calcula la distancia entre 2 coordenadas y la devuelve, para posteriormente ser analizada.
 int distancia_a_mesa(coordenada_t primer_coordenada, coordenada_t segunda_coordenada){
     double distancia = 0;
 
@@ -56,6 +80,11 @@ int distancia_a_mesa(coordenada_t primer_coordenada, coordenada_t segunda_coorde
     return (int)distancia;
 }
 
+
+// Pre: El tope de la cantidad y la mesa nueva deben estar inicializadas.
+// Post: En caso de que no haya mesas en el juego, retornará que la distancia de la mesa nueva es valida.
+//      Pero, si hay deberá comparar las coordenadas de cada una de las mesas que esten disponibles con cada coordenada de la mesa nueva,
+//      ya sea compartida o individual.
 bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t mesa_nueva){
     bool distancia_valida = true;
     if(*cantidad_mesas == 0){
@@ -86,6 +115,9 @@ bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t me
     return distancia_valida;
 }
 
+
+// Pre: La coordenada ya debe estar inicializada.
+// Post: Crea y devuelve una mesa compartida y le asigna la coordenada que llega por parametro. (coordenada random)
 mesa_t crear_mesa_compartida(coordenada_t coordenada){
     mesa_t mesa_creada;
     mesa_creada.cantidad_comensales = MAX_COMENSALES;
@@ -116,6 +148,8 @@ mesa_t crear_mesa_compartida(coordenada_t coordenada){
     return mesa_creada;
 }
 
+// Pre: La coordenada ya debe estar inicializada.
+// pOST: Crea y devuelve una mesa individual y le asigna la coordenada que llega por parametro. (coordenada randmom)
 mesa_t crear_mesa_individual(coordenada_t coordenada){
     mesa_t mesa_nueva;
     mesa_nueva.cantidad_lugares = 0;
@@ -127,6 +161,10 @@ mesa_t crear_mesa_individual(coordenada_t coordenada){
     return mesa_nueva;
 }
 
+
+// Pre: La mesa y el terreno deben estar previamente inicializados.
+// Post: Obtengo una mesa por parametro (ya sea compartida o individual) y la asigna al terreno. Es decir,
+//      en la coordenada/s correspondiente de la mesa, dibuja una 'T' en representación de una mesa.
 void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < mesa.cantidad_lugares; i++) {
         terreno[mesa.posicion[i].fil][mesa.posicion[i].col] = MESA;
@@ -134,7 +172,7 @@ void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
 }
 
 // Pre: Es necesario que las mesas, su cantidad y el terreno esten inicializados.
-// Post: Inicializa las mesas compartidas siempre y cuando se encuentren en una posicion valida.
+// Post: Crea mesas compartidas e individuales y las va asignando al array de las mesas. 
 void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terreno[MAX_FILAS][MAX_COLUMNAS]){  
 
     int contador_mesas_creadas = 0;
@@ -163,6 +201,8 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terren
     
 }
 
+// Pre: El juego y el terreno deben estar previamente inicializados.
+// Post: Dada una coordenada random generada, se la asigna a la cocina.
 void inicializar_cocina(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada = generar_coordenada_random(terreno);
 
@@ -173,11 +213,13 @@ void inicializar_cocina(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     
 }
 
+// Pre: El juego y el terreno deben estar previamente inicializados.
+// Post: Dada una coordenada random generada, se la asigna al personaje.
 void inicializar_linguini(juego_t* juego,char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada_linguini = generar_coordenada_random(terreno);
 
     juego->mozo.posicion = coordenada_linguini;
-    // printf("linguini: %i - %i\n",juego->mozo.posicion.fil,juego->mozo.posicion.col);
+    juego->mozo.tiene_mopa = false;
 
     terreno[coordenada_linguini.fil][coordenada_linguini.col] = PERSONAJE;
 }
@@ -248,7 +290,7 @@ bool es_jugada_valida(char jugada){
 }
 
 bool esta_dentro_limite(coordenada_t coordenada){
-    return(coordenada.fil < (MAX_FILAS -1) && coordenada.col < (MAX_COLUMNAS - 1));
+    return((coordenada.fil < (MAX_FILAS) && coordenada.col < (MAX_COLUMNAS )) && (coordenada.fil >= 0 && coordenada.col >= 0));
 }
 
 
@@ -275,7 +317,7 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
 void mover_arriba(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_accion = {juego->mozo.posicion.fil - 1, juego->mozo.posicion.col};
     char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
-    if((posicion_nueva == ' ' || posicion_nueva == 'O') && esta_dentro_limite(coordenada_accion)) {
+    if((posicion_nueva != MESA) && esta_dentro_limite(coordenada_accion)) {
         juego->mozo.posicion.fil = coordenada_accion.fil;
         juego->movimientos += 1;
     }
@@ -284,7 +326,7 @@ void mover_arriba(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
 void mover_abajo(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_accion = {juego->mozo.posicion.fil + 1, juego->mozo.posicion.col};
     char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
-    if(posicion_nueva == ' ' && esta_dentro_limite(coordenada_accion)) {
+    if((posicion_nueva != MESA) && esta_dentro_limite(coordenada_accion)) {
         juego->mozo.posicion.fil = coordenada_accion.fil;
         juego->movimientos += 1;
     }
@@ -292,7 +334,8 @@ void mover_abajo(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
 
 void mover_derecha(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_accion = {juego->mozo.posicion.fil, juego->mozo.posicion.col + 1};
-    if(terreno[coordenada_accion.fil][coordenada_accion.col] && esta_dentro_limite(coordenada_accion)) {
+    char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
+    if((posicion_nueva != MESA) && esta_dentro_limite(coordenada_accion)) {
         juego->mozo.posicion.col = coordenada_accion.col;
         juego->movimientos += 1;
     }
@@ -301,7 +344,7 @@ void mover_derecha(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
 void mover_izquierda(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_accion = {juego->mozo.posicion.fil, juego->mozo.posicion.col - 1};
     char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
-    if(terreno[coordenada_accion.fil][coordenada_accion.col] && esta_dentro_limite(coordenada_accion)) {
+    if((posicion_nueva != MESA) && esta_dentro_limite(coordenada_accion)) {
         juego->mozo.posicion.col = coordenada_accion.col;
         juego->movimientos += 1;
     }
@@ -311,11 +354,18 @@ void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     for(int i = 0; i < juego->cantidad_herramientas; i++){
         bool misma_coordenada_mopa = juego->mozo.posicion.fil == juego->herramientas[i].posicion.fil && juego->mozo.posicion.col == juego->herramientas[i].posicion.col;
         bool es_mopa = juego->herramientas[i].tipo == MOPA;
-        if(es_mopa && misma_coordenada_mopa) {
+        bool tiene_mopa = juego->mozo.tiene_mopa == true;
+
+        if(es_mopa && misma_coordenada_mopa && !tiene_mopa) {
+            terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = 'K';
+            juego->herramientas[i].posicion.fil = ESCONDER_MOPA;
+            juego->herramientas[i].posicion.col = ESCONDER_MOPA;
             juego->mozo.tiene_mopa = true;
-            juego->herramientas[i].posicion.fil = ' ';
-            juego->herramientas[i].posicion.col = ' ';
-            juego->mozo.posicion.fil += 1;
+        } else if (es_mopa && tiene_mopa){
+            terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = MOPA;
+            juego->herramientas[i].posicion.fil = juego->mozo.posicion.fil;
+            juego->herramientas[i].posicion.col = juego->mozo.posicion.col;
+            juego->mozo.tiene_mopa = false;
         }
     }
 }
@@ -326,46 +376,53 @@ void realizar_jugada(juego_t* juego, char accion){
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(juego, terreno);
 
-    if(accion == ACCION_MOPA){
-       accion_de_mopa(terreno, juego); 
-    }
-
-    if(accion == MOVER_ARRIBA) {
+    switch (accion){
+    case ACCION_MOPA:
+        accion_de_mopa(terreno, juego); 
+        break;
+    case MOVER_ARRIBA:
         mover_arriba(terreno, juego);
-    }
-
-    if(accion == MOVER_ABAJO) {
+        break;
+    case MOVER_ABAJO:
         mover_abajo(terreno, juego);
-    }
-
-    if(accion == MOVER_DER) {
-        mover_derecha(terreno, juego);
-    }
-
-    if(accion == MOVER_IZQ) {
+        break;
+    case MOVER_IZQ:
         mover_izquierda(terreno, juego);
+        break;
+    case MOVER_DER:
+        mover_derecha(terreno, juego);
+        break;
+    default:
+        break;
     }
 }
-
-
-
 
 void mostrar_juego(juego_t juego) {
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(&juego, terreno);
 
+    system("clear");
     imprimir_terreno(terreno);
     printf("\n");
 
     printf("Cantidad de movimientos: %i\n", juego.movimientos);
     printf("Cantidad Pedidos: %i\n", juego.mozo.cantidad_pedidos);
     printf("Dinero: %i\n", juego.dinero);
-    printf("herramientas: %i\n", juego.cantidad_herramientas);
 }
 
 
-
+int estado_juego(juego_t juego){
+    int dinero_acumulado = juego.dinero;
+    int estado = 0;
+    if(dinero_acumulado >= MONEDAS_GANAR_JUEGO) {
+        estado = 1;
+    } else {
+        estado = -1;
+    }
+    
+    return estado;
+}
 
 
 

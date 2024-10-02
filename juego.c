@@ -3,18 +3,11 @@
 #include <time.h>
 #include "restaurant.c"
 
-void imprimir_movimientos_validos(){
-    printf("Mover arriba (W)\n");
-    printf("Mover abajo (S)\n");
-    printf("Mover derecha (D)\n");
-    printf("Mover Izquierda (A)\n");
-}
+
 
 int main(){
     system("clear");
     srand((unsigned)time(NULL));
-
-
 
     juego_t juego;
 
@@ -25,7 +18,6 @@ int main(){
         char jugada;
         printf("Realice un movimiento: (mover o agarrar/soltar mopa):\n");
         imprimir_movimientos_validos();
-        printf("cant mov:%i\n", juego.movimientos);
         
         scanf(" %c", &jugada);
         if(!es_jugada_valida(jugada)){
@@ -33,9 +25,18 @@ int main(){
             imprimir_movimientos_validos();
             scanf(" %c", &jugada);
         }
-        printf("cant mov22:%i\n", juego.movimientos);
         realizar_jugada(&juego, jugada);
         mostrar_juego(juego);
+    }
+
+
+    int resultado = estado_juego(juego);
+    if(resultado == 1){
+        printf("Ganaste el juego.");
+    } else if (resultado == -1){
+        printf("Perdiste el juego.");
+    } else {
+        printf("Sigue jugando.");
     }
 
     return 0;
