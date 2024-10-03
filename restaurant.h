@@ -3,37 +3,19 @@
 
 #include <stdbool.h>
 
-#define MAX_COMENSALES 4
+#define MAX_COMENSALES 4 
 #define MAX_POSICION 9
 #define MAX_DESCRIPCION 50
-#define MAX_PLATOS 10
+#define MAX_PLATOS 10 
 #define MAX_PEDIDOS 10
-#define MAX_BANDEJA 10
+#define MAX_BANDEJA 10 
 #define MAX_HERRAMIENTAS 20
-#define MAX_OBSTACULOS 20
-#define MAX_MESAS 10
-#define MAX_MOVIMIENTOS 200
-#define MAX_MOVIMIENTOS 200
-
-#define COCINA 'C'
-#define MESA 'T'
-#define PERSONAJE 'L'
-#define MOPA 'O'
-#define MONEDA 'M'
-#define PATINES 'P'
-#define CHARCOS 'H'
-
-#define MIN_COMENSALES 1
+#define MAX_OBSTACULOS 20 
+#define MAX_MESAS 20
 
 #define MAX_FILAS 20
 #define MAX_COLUMNAS 20
 
-
-#define MOVER_ARRIBA 'W'
-#define MOVER_ABAJO 'S'
-#define MOVER_DER 'D'
-#define MOVER_IZQ 'A'
-#define ACCION_MOPA 'O'
 
 typedef struct coordenada {
     int fil;

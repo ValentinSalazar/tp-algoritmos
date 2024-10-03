@@ -1,8 +1,32 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
-#include "restaurant.c"
+#include "restaurant.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+
+
+#define MAX_MOVIMIENTOS 200
+
+#define MOVER_ARRIBA 'W'
+#define MOVER_ABAJO 'S'
+#define MOVER_DER 'D'
+#define MOVER_IZQ 'A'
+#define ACCION_MOPA 'O'
+
+
+// Pre:
+// Post: Imprime los movimientos validos que puede realizar el jugador.
+void imprimir_movimientos_validos(){
+    printf("Mover arriba (W)\n");
+    printf("Mover abajo (S)\n");
+    printf("Mover derecha (D)\n");
+    printf("Mover Izquierda (A)\n");
+}
+// Pre: Llega una jugada por parametro.
+// Post: Verifica que esa jugada es valida y retorna true en caso correcto, en caso contrario false.
+bool es_jugada_valida(char jugada){
+    return jugada == MOVER_ARRIBA || jugada == MOVER_ABAJO || jugada == MOVER_DER || jugada == MOVER_IZQ || jugada == ACCION_MOPA;
+}
 
 
 int main(){

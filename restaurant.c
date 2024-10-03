@@ -1,7 +1,26 @@
 #include "restaurant.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#define MIN_COMENSALES 1
+
+#define COCINA 'C'
+#define MESA 'T'
+#define PERSONAJE 'L'
+#define MOPA 'O'
+#define MONEDA 'M'
+#define PATINES 'P'
+#define CHARCOS 'H'
+
+
+#define MOVER_ARRIBA 'W'
+#define MOVER_ABAJO 'S'
+#define MOVER_DER 'D'
+#define MOVER_IZQ 'A'
+#define ACCION_MOPA 'O'
+
 
 const int CANTIDAD_MESAS_INDIVIDUALES = 6;
 const int CANTIDAD_MESAS_COMPARTIDAS = 4;
@@ -37,17 +56,6 @@ void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
     }
 }
 
-
-// Pre:
-// Post: Imprime los movimientos validos que puede realizar el jugador.
-void imprimir_movimientos_validos(){
-    printf("Mover arriba (W)\n");
-    printf("Mover abajo (S)\n");
-    printf("Mover derecha (D)\n");
-    printf("Mover Izquierda (A)\n");
-}
-
-
 // Pre: El terreno debe estar previamente inicializado.
 // Post: Genera una coordenada random dentro de los limites de la matriz y en una posición vacía.
 //       Luego, esa coordenada la devuelvo.
@@ -67,7 +75,6 @@ coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
 
     return coordenada;
 }
-
 
 // Pre: Las coordenadas deben estar inicializadas.
 // Post: Calcula la distancia entre 2 coordenadas y la devuelve, para posteriormente ser analizada.
@@ -143,7 +150,9 @@ mesa_t crear_mesa_compartida(coordenada_t coordenada){
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada_cuarta;
     mesa_creada.cantidad_lugares += 1;
 
-
+    mesa_creada.cantidad_comensales = 0;
+    mesa_creada.paciencia = 0;
+    mesa_creada.pedido_tomado = false;
 
     return mesa_creada;
 }
@@ -157,6 +166,9 @@ mesa_t crear_mesa_individual(coordenada_t coordenada){
     mesa_nueva.posicion[mesa_nueva.cantidad_lugares] = coordenada;
     mesa_nueva.cantidad_lugares += 1;
 
+    mesa_nueva.cantidad_comensales = 0;
+    mesa_nueva.paciencia = 0;
+    mesa_nueva.pedido_tomado = false;
 
     return mesa_nueva;
 }
@@ -209,7 +221,7 @@ void inicializar_cocina(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     cocina_t cocina;
     cocina.posicion = coordenada;
 
-    juego->cocina.posicion = coordenada;
+    juego->cocina = cocina;
     
 }
 
@@ -221,9 +233,14 @@ void inicializar_linguini(juego_t* juego,char terreno[MAX_FILAS][MAX_COLUMNAS]){
     juego->mozo.posicion = coordenada_linguini;
     juego->mozo.tiene_mopa = false;
 
+    juego->mozo.patines_puestos = 0;
+    juego->mozo.cantidad_bandeja = 0;
+
     terreno[coordenada_linguini.fil][coordenada_linguini.col] = PERSONAJE;
 }
 
+// Pre: Debe llegar por parametro un tipo de objeto valido.
+// Post: Genera una coordenada random y se la asigna al objeto. Luego, ese objeto lo agrega al array de herramientas.
 void inicializar_objeto(char tipo_objeto, char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_objeto = generar_coordenada_random(terreno);
 
@@ -237,6 +254,8 @@ void inicializar_objeto(char tipo_objeto, char terreno[MAX_FILAS][MAX_COLUMNAS],
     
 }
 
+// Pre: Debe llegar por parametro un tipo de obstaculo valido.
+// Post: Crea un obstaculo dependiendo de su tipo y lo agrega al array de obstaculos.
 void inicializar_obstaculo(char tipo_obstaculo, char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_obstaculo = generar_coordenada_random(terreno);
 
@@ -249,50 +268,9 @@ void inicializar_obstaculo(char tipo_obstaculo, char terreno[MAX_FILAS][MAX_COLU
 
 }
 
-void inicializar_juego(juego_t* juego){
-
-    char terreno[MAX_FILAS][MAX_COLUMNAS];
-    inicializar_terreno(terreno);
-
-    
-    juego->cantidad_mesas = 0;
-    juego->cantidad_herramientas = 0;
-    juego->dinero = 0;
-    juego->movimientos = 0;
-    juego->mozo.cantidad_pedidos = 0;
-    juego->cantidad_obstaculos = 0;
-    
-    inicializar_mesas(juego->mesas, &juego->cantidad_mesas, terreno);
-
-    inicializar_cocina(juego, terreno);
-    
-    inicializar_linguini(juego, terreno);
-    
-    inicializar_objeto(MOPA, terreno, juego);
-    
-    for(int i = 0; i < CANTIDAD_MONEDAS; i++) {
-        inicializar_objeto(MONEDA, terreno, juego);
-    }
-
-
-    for(int i = 0; i < CANTIDAD_PATINES; i++) {
-        inicializar_objeto(PATINES, terreno, juego);
-    }
-
-    for(int i = 0; i < CANTIDAD_CHARCOS; i++) {
-        inicializar_obstaculo(CHARCOS, terreno, juego);
-    }
-   
-}
-
-bool es_jugada_valida(char jugada){
-    return jugada == MOVER_ARRIBA || jugada == MOVER_ABAJO || jugada == MOVER_DER || jugada == MOVER_IZQ || jugada == ACCION_MOPA;
-}
-
 bool esta_dentro_limite(coordenada_t coordenada){
     return((coordenada.fil < (MAX_FILAS) && coordenada.col < (MAX_COLUMNAS )) && (coordenada.fil >= 0 && coordenada.col >= 0));
 }
-
 
 void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
 
@@ -370,6 +348,42 @@ void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     }
 }
 
+void inicializar_juego(juego_t* juego){
+
+    char terreno[MAX_FILAS][MAX_COLUMNAS];
+    inicializar_terreno(terreno);
+
+    
+    juego->cantidad_mesas = 0;
+    juego->cantidad_herramientas = 0;
+    juego->dinero = 0;
+    juego->movimientos = 0;
+    juego->mozo.cantidad_pedidos = 0;
+    juego->cantidad_obstaculos = 0;
+    
+    inicializar_mesas(juego->mesas, &juego->cantidad_mesas, terreno);
+
+    inicializar_cocina(juego, terreno);
+    
+    inicializar_linguini(juego, terreno);
+    
+    inicializar_objeto(MOPA, terreno, juego);
+    
+    for(int i = 0; i < CANTIDAD_MONEDAS; i++) {
+        inicializar_objeto(MONEDA, terreno, juego);
+    }
+
+
+    for(int i = 0; i < CANTIDAD_PATINES; i++) {
+        inicializar_objeto(PATINES, terreno, juego);
+    }
+
+    for(int i = 0; i < CANTIDAD_CHARCOS; i++) {
+        inicializar_obstaculo(CHARCOS, terreno, juego);
+    }
+   
+}
+
 void realizar_jugada(juego_t* juego, char accion){
 
     char terreno[MAX_FILAS][MAX_COLUMNAS];
@@ -411,7 +425,6 @@ void mostrar_juego(juego_t juego) {
     printf("Dinero: %i\n", juego.dinero);
 }
 
-
 int estado_juego(juego_t juego){
     int dinero_acumulado = juego.dinero;
     int estado = 0;
@@ -424,14 +437,3 @@ int estado_juego(juego_t juego){
     return estado;
 }
 
-
-
-
-// bool es_coordenada_ocupada(int* fila, int* columna, char terreno[MAX_FILAS][MAX_COLUMNAS]){
-//     return(terreno[*fila][*columna] != ' ');
-// }
-
-
-// bool es_coordenada_valida(coordenada_t coordenada, char terreno[MAX_FILAS][MAX_COLUMNAS]){
-//     return((coordenada.fil < 20 && coordenada.col < 20) && (terreno[coordenada.fil][coordenada.col] == ' '));
-// }
