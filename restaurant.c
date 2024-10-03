@@ -221,6 +221,8 @@ void inicializar_cocina(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     cocina_t cocina;
     cocina.posicion = coordenada;
 
+    terreno[cocina.posicion.fil][cocina.posicion.col] = COCINA;
+
     juego->cocina = cocina;
     
 }
@@ -234,7 +236,9 @@ void inicializar_linguini(juego_t* juego,char terreno[MAX_FILAS][MAX_COLUMNAS]){
     juego->mozo.tiene_mopa = false;
 
     juego->mozo.patines_puestos = 0;
+    juego->mozo.cantidad_patines = 0;
     juego->mozo.cantidad_bandeja = 0;
+    juego->mozo.pedidos->cantidad_platos = 0;
 
     terreno[coordenada_linguini.fil][coordenada_linguini.col] = PERSONAJE;
 }
@@ -248,6 +252,8 @@ void inicializar_objeto(char tipo_objeto, char terreno[MAX_FILAS][MAX_COLUMNAS],
 
     nuevo_objeto.posicion = coordenada_objeto;
     nuevo_objeto.tipo = tipo_objeto;
+
+    terreno[nuevo_objeto.posicion.fil][nuevo_objeto.posicion.col] = nuevo_objeto.tipo;
 
     juego->herramientas[juego->cantidad_herramientas] = nuevo_objeto;
     juego->cantidad_herramientas += 1;
@@ -263,15 +269,23 @@ void inicializar_obstaculo(char tipo_obstaculo, char terreno[MAX_FILAS][MAX_COLU
     nuevo_obstaculo.tipo = tipo_obstaculo;
     nuevo_obstaculo.posicion = coordenada_obstaculo;
 
+    terreno[nuevo_obstaculo.posicion.fil][nuevo_obstaculo.posicion.col] = nuevo_obstaculo.tipo;
+
     juego->obstaculos[juego->cantidad_obstaculos] = nuevo_obstaculo;
     juego->cantidad_obstaculos += 1;
 
 }
 
+
+// Pre: La coordenada que llega por parametro debe estar previamente inicializada.
+// Post: Verifica que la coordenada este dentro del limite del terreno. En caso correcto, retorna true. 
+//      Caso contrario, false.
 bool esta_dentro_limite(coordenada_t coordenada){
     return((coordenada.fil < (MAX_FILAS) && coordenada.col < (MAX_COLUMNAS )) && (coordenada.fil >= 0 && coordenada.col >= 0));
 }
 
+// Pre: El juego debe estar previamente inicializado.
+// Post: Todas las posiciones de los objetos del juego, serán posicionadas en el terreno que viene por parametro.
 void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
 
     for(int i = 0; i < juego->cantidad_mesas; i++){
@@ -292,6 +306,8 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
     }
 }
 
+// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
+// Post: Mueve el personaje una fila mas arriba por la misma columna, y actualiza su posición.
 void mover_arriba(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_accion = {juego->mozo.posicion.fil - 1, juego->mozo.posicion.col};
     char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
@@ -301,6 +317,8 @@ void mover_arriba(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     }
 }
 
+// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
+// Post: Mueve el personaje una fila mas abajo por la misma columna, y actualiza su posición.
 void mover_abajo(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_accion = {juego->mozo.posicion.fil + 1, juego->mozo.posicion.col};
     char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
@@ -310,6 +328,8 @@ void mover_abajo(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     }
 }
 
+// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
+// Post: Mueve el personaje una columna más adelante por la misma fila, y actualiza su posición.
 void mover_derecha(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_accion = {juego->mozo.posicion.fil, juego->mozo.posicion.col + 1};
     char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
@@ -319,6 +339,8 @@ void mover_derecha(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     }
 }
 
+// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
+// Post: Mueve el personaje una columna mas atras por la misma fila, y actualiza su posición.
 void mover_izquierda(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_accion = {juego->mozo.posicion.fil, juego->mozo.posicion.col - 1};
     char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
@@ -328,26 +350,36 @@ void mover_izquierda(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     }
 }
 
+// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
+// Post: En caso de que el personaje este en la misma posición que la mopa, entonces tomará la mopa y se actualizará  
+//      la posición de la mopa (fuera de rango), simulando que la tiene Linguini. 
+//      En caso de que ya tenga la mopa, entonces dejará la mopa en la posición en la que se encuentre, y se actualizará
+//      la posición de la mopa en donde la dejo el personaje.
 void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
-    for(int i = 0; i < juego->cantidad_herramientas; i++){
-        bool misma_coordenada_mopa = juego->mozo.posicion.fil == juego->herramientas[i].posicion.fil && juego->mozo.posicion.col == juego->herramientas[i].posicion.col;
-        bool es_mopa = juego->herramientas[i].tipo == MOPA;
-        bool tiene_mopa = juego->mozo.tiene_mopa == true;
 
-        if(es_mopa && misma_coordenada_mopa && !tiene_mopa) {
-            terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = 'K';
-            juego->herramientas[i].posicion.fil = ESCONDER_MOPA;
-            juego->herramientas[i].posicion.col = ESCONDER_MOPA;
-            juego->mozo.tiene_mopa = true;
-        } else if (es_mopa && tiene_mopa){
-            terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = MOPA;
-            juego->herramientas[i].posicion.fil = juego->mozo.posicion.fil;
-            juego->herramientas[i].posicion.col = juego->mozo.posicion.col;
-            juego->mozo.tiene_mopa = false;
-        }
+    coordenada_t* coordenada_mopa = &(juego->herramientas[0].posicion);
+
+    coordenada_t* coordenada_personaje = &(juego->mozo.posicion);
+
+    bool misma_coordenada_mopa = coordenada_personaje->fil == coordenada_mopa->fil && coordenada_personaje->col == coordenada_mopa->col;
+    bool tiene_mopa = juego->mozo.tiene_mopa == true;
+
+    if(misma_coordenada_mopa && !tiene_mopa) {
+        coordenada_mopa->fil = ESCONDER_MOPA;
+        coordenada_mopa->col = ESCONDER_MOPA;
+
+        juego->mozo.tiene_mopa = true;
+    } else if (tiene_mopa){
+        terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = MOPA;
+        coordenada_mopa->fil = juego->mozo.posicion.fil;
+        coordenada_mopa->col = juego->mozo.posicion.col;
+        juego->mozo.tiene_mopa = false;
     }
 }
 
+
+// Pre: 
+// Post: Simulando un terreno de 20x20, se inicializaran todos los objetos del juego.
 void inicializar_juego(juego_t* juego){
 
     char terreno[MAX_FILAS][MAX_COLUMNAS];
@@ -364,11 +396,10 @@ void inicializar_juego(juego_t* juego){
     inicializar_mesas(juego->mesas, &juego->cantidad_mesas, terreno);
 
     inicializar_cocina(juego, terreno);
-    
+
     inicializar_linguini(juego, terreno);
-    
     inicializar_objeto(MOPA, terreno, juego);
-    
+
     for(int i = 0; i < CANTIDAD_MONEDAS; i++) {
         inicializar_objeto(MONEDA, terreno, juego);
     }
@@ -378,12 +409,15 @@ void inicializar_juego(juego_t* juego){
         inicializar_objeto(PATINES, terreno, juego);
     }
 
+
     for(int i = 0; i < CANTIDAD_CHARCOS; i++) {
         inicializar_obstaculo(CHARCOS, terreno, juego);
     }
-   
+    
 }
 
+// Pre: El juego debe estar previamente inicializado.
+// Post: La acción debe ser valida y a cada acción se le asigna una jugada a realizar.
 void realizar_jugada(juego_t* juego, char accion){
 
     char terreno[MAX_FILAS][MAX_COLUMNAS];
@@ -411,6 +445,9 @@ void realizar_jugada(juego_t* juego, char accion){
     }
 }
 
+// Pre: El juego debe estar previamente inicializado.
+// Post: Se creará un terreno y se le posicionaran todos los objetos del juego. Luego, se imprime por pantalla el terreno,
+//         los movimientos realizados, cantidad de pedidos y el dinero total.
 void mostrar_juego(juego_t juego) {
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
@@ -425,6 +462,10 @@ void mostrar_juego(juego_t juego) {
     printf("Dinero: %i\n", juego.dinero);
 }
 
+
+// Pre: El juego debe estar previamente inicializado.
+// Post: Dependiendo del dinero que junto el personaje, retornará 1 si alcanzo el dinero suficiente. Retornará -1 si no lo hizo.
+//      Retornará 0, si debe seguir jugando.
 int estado_juego(juego_t juego){
     int dinero_acumulado = juego.dinero;
     int estado = 0;
