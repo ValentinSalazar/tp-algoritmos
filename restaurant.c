@@ -363,16 +363,16 @@ void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
 
     bool misma_coordenada_mopa = coordenada_personaje->fil == coordenada_mopa->fil && coordenada_personaje->col == coordenada_mopa->col;
     bool tiene_mopa = juego->mozo.tiene_mopa == true;
-
+    bool espacio_vacio = terreno[coordenada_personaje->fil][coordenada_personaje->col] == PERSONAJE;
+    
     if(misma_coordenada_mopa && !tiene_mopa) {
         coordenada_mopa->fil = ESCONDER_MOPA;
         coordenada_mopa->col = ESCONDER_MOPA;
-
         juego->mozo.tiene_mopa = true;
-    } else if (tiene_mopa){
+    } else if (tiene_mopa && espacio_vacio){
+        coordenada_mopa->fil = coordenada_personaje->fil;
+        coordenada_mopa->col = coordenada_personaje->col;
         terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = MOPA;
-        coordenada_mopa->fil = juego->mozo.posicion.fil;
-        coordenada_mopa->col = juego->mozo.posicion.col;
         juego->mozo.tiene_mopa = false;
     }
 }
