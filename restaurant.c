@@ -312,50 +312,6 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
     terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = PERSONAJE;
 }
 
-// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
-// Post: Mueve el personaje una fila mas arriba por la misma columna, y actualiza su posición.
-void mover_arriba(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
-    coordenada_t coordenada_accion = {juego->mozo.posicion.fil - 1, juego->mozo.posicion.col};
-    char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
-    if((posicion_nueva != MESA) && esta_dentro_limite(coordenada_accion)) {
-        juego->mozo.posicion.fil = coordenada_accion.fil;
-        juego->movimientos += 1;
-    }
-}
-
-// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
-// Post: Mueve el personaje una fila mas abajo por la misma columna, y actualiza su posición.
-void mover_abajo(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
-    coordenada_t coordenada_accion = {juego->mozo.posicion.fil + 1, juego->mozo.posicion.col};
-    char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
-    if((posicion_nueva != MESA) && esta_dentro_limite(coordenada_accion)) {
-        juego->mozo.posicion.fil = coordenada_accion.fil;
-        juego->movimientos += 1;
-    }
-}
-
-// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
-// Post: Mueve el personaje una columna más adelante por la misma fila, y actualiza su posición.
-void mover_derecha(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
-    coordenada_t coordenada_accion = {juego->mozo.posicion.fil, juego->mozo.posicion.col + 1};
-    char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
-    if((posicion_nueva != MESA) && esta_dentro_limite(coordenada_accion)) {
-        juego->mozo.posicion.col = coordenada_accion.col;
-        juego->movimientos += 1;
-    }
-}
-
-// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
-// Post: Mueve el personaje una columna mas atras por la misma fila, y actualiza su posición.
-void mover_izquierda(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
-    coordenada_t coordenada_accion = {juego->mozo.posicion.fil, juego->mozo.posicion.col - 1};
-    char posicion_nueva = terreno[coordenada_accion.fil][coordenada_accion.col];
-    if((posicion_nueva != MESA) && esta_dentro_limite(coordenada_accion)) {
-        juego->mozo.posicion.col = coordenada_accion.col;
-        juego->movimientos += 1;
-    }
-}
-
 
 void mover_linguini(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego, coordenada_t nueva_coordenada){
     char posicion_nueva = terreno[nueva_coordenada.fil][nueva_coordenada.col];
