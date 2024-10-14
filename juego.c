@@ -14,13 +14,14 @@
 #define ACCION_MOPA 'O'
 
 
+
 // Pre:
 // Post: Imprime los movimientos validos que puede realizar el jugador.
 void imprimir_movimientos_validos(){
-    printf("Mover arriba (W)\n");
-    printf("Mover abajo (S)\n");
-    printf("Mover derecha (D)\n");
-    printf("Mover Izquierda (A)\n");
+    printf("Mover arriba (%c)\n", MOVER_ARRIBA);
+    printf("Mover abajo (%c)\n", MOVER_ABAJO);
+    printf("Mover derecha (%c)\n", MOVER_DER);
+    printf("Mover Izquierda (%c)\n", MOVER_IZQ);
 }
 // Pre: Llega una jugada por parametro.
 // Post: Verifica que esa jugada es valida y retorna true en caso correcto, en caso contrario false.
@@ -38,13 +39,14 @@ int main(){
     inicializar_juego(&juego);
     mostrar_juego(juego);   
 
+
     while(juego.movimientos < MAX_MOVIMIENTOS) {
         char jugada;
         printf("Realice un movimiento: (mover o agarrar/soltar mopa):\n");
         imprimir_movimientos_validos();
         
         scanf(" %c", &jugada);
-        if(!es_jugada_valida(jugada)){
+        while(!es_jugada_valida(jugada)){
             printf("Realice un movimiento valido (mover o agarrar/soltar mopa): ");
             imprimir_movimientos_validos();
             scanf(" %c", &jugada);
@@ -54,10 +56,10 @@ int main(){
     }
 
 
-    int resultado = estado_juego(juego);
-    if(resultado == 1){
+    int estado = estado_juego(juego);
+    if(estado == JUEGO_GANADO){
         printf("Ganaste el juego.");
-    } else if (resultado == -1){
+    } else if (estado == JUEGO_PERDIDO){
         printf("Perdiste el juego.");
     } else {
         printf("Sigue jugando.");

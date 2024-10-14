@@ -16,6 +16,8 @@
 #define MAX_FILAS 20
 #define MAX_COLUMNAS 20
 
+#define JUEGO_GANADO 1
+#define JUEGO_PERDIDO 1
 
 typedef struct coordenada {
     int fil;
