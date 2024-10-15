@@ -23,12 +23,19 @@ void imprimir_movimientos_validos(){
     printf("Mover derecha (%c)\n", MOVER_DER);
     printf("Mover Izquierda (%c)\n", MOVER_IZQ);
 }
-// Pre: Llega una jugada por parametro.
-// Post: Verifica que esa jugada es valida y retorna true en caso correcto, en caso contrario false.
+// Pre: Llegara un caracter por parametro representando la jugada que ha hecho el usuario.
+// Post: Verifica que esa jugada es valida (W,A,S,D o accion de mopa) y retorna true en caso que sea valida, en caso contrario false.
 bool es_jugada_valida(char jugada){
     return jugada == MOVER_ARRIBA || jugada == MOVER_ABAJO || jugada == MOVER_DER || jugada == MOVER_IZQ || jugada == ACCION_MOPA;
 }
 
+// Pre: El puntero de la jugada debe estar inicializado.
+// Post: Solicita al usuario un caracter representando una jugada y se la asigna al puntero de la jugada.
+void solicitar_jugada(char* jugada){
+    printf("Realice un movimiento: (mover o agarrar/soltar mopa):\n");
+    imprimir_movimientos_validos();
+    scanf(" %c", jugada);
+}
 
 int main(){
     system("clear");
@@ -42,15 +49,10 @@ int main(){
 
     while(juego.movimientos < MAX_MOVIMIENTOS) {
         char jugada;
-        printf("Realice un movimiento: (mover o agarrar/soltar mopa):\n");
-        imprimir_movimientos_validos();
+        do{  
+            solicitar_jugada(&jugada); 
+        } while(!es_jugada_valida(jugada));
         
-        scanf(" %c", &jugada);
-        while(!es_jugada_valida(jugada)){
-            printf("Realice un movimiento valido (mover o agarrar/soltar mopa): ");
-            imprimir_movimientos_validos();
-            scanf(" %c", &jugada);
-        }
         realizar_jugada(&juego, jugada);
         mostrar_juego(juego);
     }

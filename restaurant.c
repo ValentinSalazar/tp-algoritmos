@@ -23,6 +23,9 @@
 
 #define JUEGO_GANADO 1
 #define JUEGO_PERDIDO 1
+#define SEGUIR_JUGANDO 0
+
+#define POSICION_VACIA ' '
 
 
 const int CANTIDAD_MESAS_INDIVIDUALES = 6;
@@ -41,15 +44,14 @@ const int MONEDAS_GANAR_JUEGO = 150000;
 void inicializar_terreno(char terreno_resto[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < MAX_FILAS; i++){
         for(int j = 0; j < MAX_COLUMNAS; j++){
-            terreno_resto[i][j] = ' ';
+            terreno_resto[i][j] = POSICION_VACIA;
         }
     }
 }
 
-// Pre: Debe estar previamente inicializado.
-// Post: Recorre la matriz del terreno e imprime todas sus posiciones.
+// Pre: El terreno debe estar previamente inicializado. Se representa mediante una matriz de MAX_FILAS x MAX_COLUMNAS.
+// Post: Recorre la matriz del terreno e imprime todos sus elementos.
 void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
-
     for(int i = 0; i < MAX_FILAS; i++) {
         printf("\n");
         for(int j = 0; j < MAX_COLUMNAS; j++) {
@@ -59,9 +61,9 @@ void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
     }
 }
 
-// Pre: El terreno debe estar previamente inicializado.
-// Post: Genera una coordenada random dentro de los limites de la matriz y en una posición vacía.
-//       Luego, esa coordenada la devuelvo.
+// Pre: El terreno debe estar previamente inicializado en una matriz de MAX_FILAS y MAX_COLUMNAS.
+// Post: Genera una coordenada random dentro de los limites (MAX_FILAS, MAX_COLUMNAS) de la matriz y en una 
+//    posición vacía representada por un caracter vacio. Luego, esa coordenada la devuelvo.     
 coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada = {-1, -1};
     bool coordenada_invalida = true;
@@ -69,29 +71,25 @@ coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
     while(coordenada_invalida) {
         int fila = rand() % (MAX_FILAS - 1) + 0;
         int columna = rand() % (MAX_COLUMNAS - 1) + 0;
-        if((terreno[fila][columna] == ' ') && (fila < (MAX_FILAS - 1) && columna < (MAX_COLUMNAS - 1))) {
+        if((terreno[fila][columna] == POSICION_VACIA) && (fila < (MAX_FILAS - 1) && columna < (MAX_COLUMNAS - 1))) {
             coordenada.fil = fila;
             coordenada.col = columna;
             coordenada_invalida = false;
         }
     }
-
     return coordenada;
 }
 
-// Pre: Las coordenadas deben estar inicializadas.
-// Post: Calcula la distancia entre 2 coordenadas y la devuelve, para posteriormente ser analizada.
+// Pre: 
+// Post: Calcula la distancia entre 2 coordenadas y la devuelve.
 int distancia_a_mesa(coordenada_t primer_coordenada, coordenada_t segunda_coordenada){
     double distancia = 0;
-
     distancia = sqrt(pow(primer_coordenada.fil - segunda_coordenada.fil, 2) + pow(primer_coordenada.col - segunda_coordenada.col, 2));
-
-
     return (int)distancia;
 }
 
 
-// Pre: El tope de la cantidad y la mesa nueva deben estar inicializadas.
+// Pre:
 // Post: En caso de que no haya mesas en el juego, retornará que la distancia de la mesa nueva es valida.
 //      Pero, si hay deberá comparar las coordenadas de cada una de las mesas que esten disponibles con cada coordenada de la mesa nueva,
 //      ya sea compartida o individual.
@@ -126,29 +124,27 @@ bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t me
 }
 
 
-// Pre: La coordenada ya debe estar inicializada.
-// Post: Crea y devuelve una mesa compartida y le asigna la coordenada que llega por parametro. (coordenada random)
+// Pre: La coordenada que viene por parametro debe ser una coordenada valida (su fila y columna deben estar entre 0 y 20) 
+//      y haberse generado de manera random.
+// Post: Inicializa las propiedades de la mesa compartida (comensales, paciencia, pedido tomado y la cantidad de lugares),
+//      y ademas le asigna la coordenada que viene por parametro. Luego, esta mesa es devuelta.
 mesa_t crear_mesa_compartida(coordenada_t coordenada){
     mesa_t mesa_creada;
     mesa_creada.cantidad_comensales = MAX_COMENSALES;
 
     mesa_creada.cantidad_lugares = 0;
     
-    
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada;
     mesa_creada.cantidad_lugares += 1;
 
-    
     coordenada_t coordenada_secundaria = {coordenada.fil, coordenada.col + 1};
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada_secundaria;
     mesa_creada.cantidad_lugares += 1;
 
-    
     coordenada_t coordenada_terciaria = {coordenada.fil + 1, coordenada.col};
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada_terciaria;
     mesa_creada.cantidad_lugares += 1;
 
-    
     coordenada_t coordenada_cuarta = {coordenada.fil + 1, coordenada.col + 1};
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada_cuarta;
     mesa_creada.cantidad_lugares += 1;
@@ -160,8 +156,11 @@ mesa_t crear_mesa_compartida(coordenada_t coordenada){
     return mesa_creada;
 }
 
-// Pre: La coordenada ya debe estar inicializada.
-// pOST: Crea y devuelve una mesa individual y le asigna la coordenada que llega por parametro. (coordenada randmom)
+
+// Pre: La coordenada que viene por parametro debe ser una coordenada valida (su fila y columna deben estar entre 0 y 20) 
+//      y haberse generado de manera random.
+// Post: Inicializa las propiedades de la mesa individual (comensales, paciencia, pedido tomado y la cantidad de lugares),
+//      y ademas le asigna la coordenada que viene por parametro. Luego, esta mesa es devuelta.
 mesa_t crear_mesa_individual(coordenada_t coordenada){
     mesa_t mesa_nueva;
     mesa_nueva.cantidad_lugares = 0;
@@ -177,16 +176,16 @@ mesa_t crear_mesa_individual(coordenada_t coordenada){
 }
 
 
-// Pre: La mesa y el terreno deben estar previamente inicializados.
+// Pre: La mesa y el terreno (matriz de 20x20) deben estar previamente inicializados.
 // Post: Obtengo una mesa por parametro (ya sea compartida o individual) y la asigna al terreno. Es decir,
-//      en la coordenada/s correspondiente de la mesa, dibuja una 'T' en representación de una mesa.
+//      en la coordenada/s correspondiente de la mesa, dibuja una 'T' en el terreno en representación de una mesa.
 void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < mesa.cantidad_lugares; i++) {
         terreno[mesa.posicion[i].fil][mesa.posicion[i].col] = MESA;
     }
 }
 
-// Pre: Es necesario que las mesas, su cantidad y el terreno esten inicializados.
+// Pre: Es necesario que las mesas, su cantidad (mayor o igual a 0) y el terreno (matriz de 20x20) esten inicializados.
 // Post: Crea mesas compartidas e individuales y las va asignando al array de las mesas. 
 void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terreno[MAX_FILAS][MAX_COLUMNAS]){  
 
@@ -218,7 +217,7 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terren
 
 
 // Pre: El juego y el terreno deben estar previamente inicializados.
-// Post: Dada una coordenada random generada, se la asigna al personaje.
+// Post: Crea una coordenada random valida y se la asigna al personaje.
 void inicializar_linguini(juego_t* juego,char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada_linguini = generar_coordenada_random(terreno);
 
@@ -234,7 +233,7 @@ void inicializar_linguini(juego_t* juego,char terreno[MAX_FILAS][MAX_COLUMNAS]){
 }
 
 // Pre: El juego y el terreno deben estar previamente inicializados.
-// Post: Dada una coordenada random generada, se la asigna a la cocina.
+// Post: Crea una coordenada random valida y se la asigna a la cocina.
 void inicializar_cocina(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     coordenada_t coordenada = generar_coordenada_random(terreno);
 
@@ -243,12 +242,10 @@ void inicializar_cocina(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     juego->cocina = cocina;
 
     terreno[cocina.posicion.fil][cocina.posicion.col] = COCINA;
-
-    
 }
 
 
-// Pre: Debe llegar por parametro un tipo de objeto valido.
+// Pre: Debe llegar por parametro un tipo de objeto valido (mopa 'O', moneda 'M', patines 'P') y un terreno inicializado.
 // Post: Genera una coordenada random y se la asigna al objeto. Luego, ese objeto lo agrega al array de herramientas.
 void inicializar_objeto(char tipo_objeto, char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_objeto = generar_coordenada_random(terreno);
@@ -262,10 +259,9 @@ void inicializar_objeto(char tipo_objeto, char terreno[MAX_FILAS][MAX_COLUMNAS],
 
     juego->herramientas[juego->cantidad_herramientas] = nuevo_objeto;
     juego->cantidad_herramientas += 1;
-    
 }
 
-// Pre: Debe llegar por parametro un tipo de obstaculo valido.
+// Pre: Debe llegar por parametro un obstaculo valido (charco 'H' unicamente, de momento) y un terreno inicializado.
 // Post: Crea un obstaculo dependiendo de su tipo y lo agrega al array de obstaculos.
 void inicializar_obstaculo(char tipo_obstaculo, char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     coordenada_t coordenada_obstaculo = generar_coordenada_random(terreno);
@@ -278,18 +274,17 @@ void inicializar_obstaculo(char tipo_obstaculo, char terreno[MAX_FILAS][MAX_COLU
 
     juego->obstaculos[juego->cantidad_obstaculos] = nuevo_obstaculo;
     juego->cantidad_obstaculos += 1;
-
 }
 
 
-// Pre: La coordenada que llega por parametro debe estar previamente inicializada.
-// Post: Verifica que la coordenada este dentro del limite del terreno. En caso correcto, retorna true. 
-//      Caso contrario, false.
+// Pre: 
+// Post: Verifica que la coordenada este dentro del limite (MAX_FILAS, MAX_COLUMNAS) del terreno. 
+//      En caso correcto, retorna true. Caso contrario, false.
 bool esta_dentro_limite(coordenada_t coordenada){
     return((coordenada.fil < (MAX_FILAS) && coordenada.col < (MAX_COLUMNAS )) && (coordenada.fil >= 0 && coordenada.col >= 0));
 }
 
-// Pre: El juego debe estar previamente inicializado.
+// Pre: Todos los elementos del juego y el terreno deben estar previamente inicializados.
 // Post: Todas las posiciones de los objetos del juego, serán posicionadas en el terreno que viene por parametro.
 void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
 
@@ -304,15 +299,16 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
         terreno[juego->herramientas[i].posicion.fil][juego->herramientas[i].posicion.col] = juego->herramientas[i].tipo;
     }
 
-
     for(int j = 0; j < juego->cantidad_obstaculos; j++) {
         terreno[juego->obstaculos[j].posicion.fil][juego->obstaculos[j].posicion.col] = juego->obstaculos[j].tipo;
     }
-
     terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = PERSONAJE;
 }
 
 
+// Pre: El juego y el terreno deben estar previamente inicializados, al igual que la nueva coordenada que tomará el personaje.
+// Post: Verificará que la posición nueva del personaje sea valida (no puede subirse a una mesa ni estar por fuera de los limites).
+//      En caso de que sea valida, entonces le asignará esa nueva coordenada al personaje y aumentará la cantidad de movimientos realizados.
 void mover_linguini(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego, coordenada_t nueva_coordenada){
     char posicion_nueva = terreno[nueva_coordenada.fil][nueva_coordenada.col];
     if((posicion_nueva != MESA) && esta_dentro_limite(nueva_coordenada)) {
@@ -330,7 +326,6 @@ void mover_linguini(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego, coord
 //          A -> Se mueve hacia la izquierda (se mantiene en la misma fila, retrocede una columna) -> i se mantiene, j - 1
 coordenada_t nueva_cordenada_linguini(char jugada, juego_t* juego){
     coordenada_t coordenada_actual = juego->mozo.posicion;
-
     coordenada_t coordenada_nueva = {-1, -1};
 
     if(jugada == MOVER_ARRIBA){
@@ -346,13 +341,12 @@ coordenada_t nueva_cordenada_linguini(char jugada, juego_t* juego){
         coordenada_nueva.fil = coordenada_actual.fil;
         coordenada_nueva.col = coordenada_actual.col - 1;
     }
-
     return coordenada_nueva;
 }
 
 
 
-// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados.
+// Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados en el terreno.
 // Post: En caso de que el personaje este en la misma posición que la mopa, entonces tomará la mopa y se actualizará  
 //      la posición de la mopa (fuera de rango), simulando que la tiene Linguini. 
 //      En caso de que ya tenga la mopa, entonces dejará la mopa en la posición en la que se encuentre (con sus reestricciones), 
@@ -385,7 +379,7 @@ void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
 
 
 // Pre: 
-// Post: Simulando un terreno de 20x20, se inicializaran todos los objetos del juego.
+// Post: Simulando un terreno representado por la matriz de MAX_FILAS x MAX_COLUMNAS, se inicializaran todos los objetos del juego.
 void inicializar_juego(juego_t* juego){
 
     char terreno[MAX_FILAS][MAX_COLUMNAS];
@@ -423,8 +417,9 @@ void inicializar_juego(juego_t* juego){
     
 }
 
-// Pre: El juego debe estar previamente inicializado.
-// Post: La acción debe ser valida y a cada acción se le asigna una jugada a realizar.
+// Pre: El juego que viene por parametro debe estar previamente inicializado y la acción a realizar, 
+//      debe ser valida (W,A,S,D o accion de mopa).
+// Post: Verifica que tipo de acción es y en cada caso particular, llamará a una funcion encargada de ejecutar la jugada.
 void realizar_jugada(juego_t* juego, char accion){
 
     char terreno[MAX_FILAS][MAX_COLUMNAS];
@@ -436,10 +431,9 @@ void realizar_jugada(juego_t* juego, char accion){
     } else {
         mover_linguini(terreno, juego, nueva_cordenada_linguini(accion, juego));
     }
-
 }
 
-// Pre: El juego debe estar previamente inicializado.
+// Pre: El juego que viene por parametro debe estar previamente inicializado.
 // Post: Se creará un terreno y se le posicionaran todos los objetos del juego. Luego, se imprime por pantalla el terreno,
 //         los movimientos realizados, cantidad de pedidos y el dinero total.
 void mostrar_juego(juego_t juego) {
@@ -457,12 +451,12 @@ void mostrar_juego(juego_t juego) {
 }
 
 
-// Pre: El juego debe estar previamente inicializado.
-// Post: Dependiendo del dinero que junto el personaje, retornará 1 si alcanzo el dinero suficiente. Retornará -1 si no lo hizo.
-//      Retornará 0, si debe seguir jugando.
+// Pre: El juego que viene por parametro debe estar previamente inicializado.
+// Post: Dependiendo del dinero que junto el personaje, retornará JUEGO_GANADO si alcanzo el dinero suficiente. 
+//      Retornará JUEGO_PERDIDO si no lo hizo. Retornará SEGUIR_JUGANDO, si debe seguir jugando.      
 int estado_juego(juego_t juego){
     int dinero_acumulado = juego.dinero;
-    int estado = 0;
+    int estado = SEGUIR_JUGANDO;
     if(dinero_acumulado >= MONEDAS_GANAR_JUEGO) {
         estado = JUEGO_GANADO;
     } else {
