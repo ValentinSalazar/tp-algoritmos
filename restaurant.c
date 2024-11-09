@@ -22,10 +22,22 @@
 #define ACCION_MOPA 'O'
 
 #define JUEGO_GANADO 1
-#define JUEGO_PERDIDO 1
+#define JUEGO_PERDIDO -1
 #define SEGUIR_JUGANDO 0
 
 #define POSICION_VACIA ' '
+
+#define PRECIO_MESA_GRUPAL 20000
+#define PRECIO_MESA_INDIVIDUAL 5000
+
+const int MILANESA_NAPOLITANA = 1;
+const int TIEMPO_MILANESA_NAPOLITANA = 30;
+const int HAMBURGUESA = 2;
+const int TIEMPO_HAMBURGUESA = 15;
+const int PARRILLA = 3;
+const int TIEMPO_PARRILLA = 20;
+const int RATATOUILLE = 4;
+const int TIEMPO_RATATOUILLE = 25;
 
 
 const int CANTIDAD_MESAS_INDIVIDUALES = 6;
@@ -39,7 +51,7 @@ const int ESCONDER_MOPA = 200;
 
 const int MONEDAS_GANAR_JUEGO = 150000;
 
-// Pre: 
+// Pre:
 // Post: Inicializa todas las posiciones del terreno con un espacio vacio -> ' '
 void inicializar_terreno(char terreno_resto[MAX_FILAS][MAX_COLUMNAS]){
     for(int i = 0; i < MAX_FILAS; i++){
@@ -62,10 +74,10 @@ void imprimir_terreno(char terreno[MAX_FILAS][MAX_COLUMNAS]) {
 }
 
 // Pre: El terreno debe estar previamente inicializado en una matriz de MAX_FILAS y MAX_COLUMNAS.
-// Post: Genera una coordenada random dentro de los limites (MAX_FILAS, MAX_COLUMNAS) de la matriz y en una 
-//    posición vacía representada por un caracter vacio. Luego, esa coordenada la devuelvo.     
+// Post: Genera una coordenada random dentro de los limites (MAX_FILAS, MAX_COLUMNAS) de la matriz y en una
+//    posición vacía representada por un caracter vacio. Luego, esa coordenada la devuelvo.
 coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
-    coordenada_t coordenada = {-1, -1};
+    coordenada_t coordenada;
     bool coordenada_invalida = true;
 
     while(coordenada_invalida) {
@@ -80,7 +92,7 @@ coordenada_t generar_coordenada_random(char terreno[MAX_FILAS][MAX_COLUMNAS]){
     return coordenada;
 }
 
-// Pre: 
+// Pre:
 // Post: Calcula la distancia entre 2 coordenadas y la devuelve.
 int distancia_a_mesa(coordenada_t primer_coordenada, coordenada_t segunda_coordenada){
     double distancia = 0;
@@ -105,7 +117,7 @@ bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t me
         while(i < *cantidad_mesas && !hay_posicion_invalida){
             while(j < mesas[i].cantidad_lugares && !hay_posicion_invalida){
                 while(k < mesa_nueva.cantidad_lugares && !hay_posicion_invalida){
-                    if(distancia_a_mesa(mesas[i].posicion[j], mesa_nueva.posicion[k]) <= 1) { 
+                    if(distancia_a_mesa(mesas[i].posicion[j], mesa_nueva.posicion[k]) <= 1) {
                         distancia_valida = false;
                         hay_posicion_invalida = true;
                     }
@@ -124,7 +136,7 @@ bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t me
 }
 
 
-// Pre: La coordenada que viene por parametro debe ser una coordenada valida (su fila y columna deben estar entre 0 y 20) 
+// Pre: La coordenada que viene por parametro debe ser una coordenada valida (su fila y columna deben estar entre 0 y 20)
 //      y haberse generado de manera random.
 // Post: Inicializa las propiedades de la mesa compartida (comensales, paciencia, pedido tomado y la cantidad de lugares),
 //      y ademas le asigna la coordenada que viene por parametro. Luego, esta mesa es devuelta.
@@ -133,7 +145,7 @@ mesa_t crear_mesa_compartida(coordenada_t coordenada){
     mesa_creada.cantidad_comensales = MAX_COMENSALES;
 
     mesa_creada.cantidad_lugares = 0;
-    
+
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada;
     mesa_creada.cantidad_lugares += 1;
 
@@ -157,7 +169,7 @@ mesa_t crear_mesa_compartida(coordenada_t coordenada){
 }
 
 
-// Pre: La coordenada que viene por parametro debe ser una coordenada valida (su fila y columna deben estar entre 0 y 20) 
+// Pre: La coordenada que viene por parametro debe ser una coordenada valida (su fila y columna deben estar entre 0 y 20)
 //      y haberse generado de manera random.
 // Post: Inicializa las propiedades de la mesa individual (comensales, paciencia, pedido tomado y la cantidad de lugares),
 //      y ademas le asigna la coordenada que viene por parametro. Luego, esta mesa es devuelta.
@@ -186,8 +198,8 @@ void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
 }
 
 // Pre: Es necesario que las mesas, su cantidad (mayor o igual a 0) y el terreno (matriz de 20x20) esten inicializados.
-// Post: Crea mesas compartidas e individuales y las va asignando al array de las mesas. 
-void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terreno[MAX_FILAS][MAX_COLUMNAS]){  
+// Post: Crea mesas compartidas e individuales y las va asignando al array de las mesas.
+void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terreno[MAX_FILAS][MAX_COLUMNAS]){
 
     int contador_mesas_creadas = 0;
     while(contador_mesas_creadas < CANTIDAD_MESAS_COMPARTIDAS) {
@@ -212,7 +224,7 @@ void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terren
             contador_mesas_creadas += 1;
         }
     }
-    
+
 }
 
 
@@ -277,11 +289,24 @@ void inicializar_obstaculo(char tipo_obstaculo, char terreno[MAX_FILAS][MAX_COLU
 }
 
 
-// Pre: 
-// Post: Verifica que la coordenada este dentro del limite (MAX_FILAS, MAX_COLUMNAS) del terreno. 
+// Pre:
+// Post: Verifica que la coordenada este dentro del limite (MAX_FILAS, MAX_COLUMNAS) del terreno.
 //      En caso correcto, retorna true. Caso contrario, false.
 bool esta_dentro_limite(coordenada_t coordenada){
     return((coordenada.fil < (MAX_FILAS) && coordenada.col < (MAX_COLUMNAS )) && (coordenada.fil >= 0 && coordenada.col >= 0));
+}
+
+// Pre: El juego debe estar inicializado, particularmente el vector de herramientas con una longitud de MAX_HERRAMIENTAS
+// Post: Retorna el indice de la mopa en caso de encontrarlo, si no, retorna -1.
+int buscar_indice_mopa(juego_t* juego){
+    int indice_mopa = -1;
+    for(int i = 0; i < juego->cantidad_herramientas; i++){
+        if(juego->herramientas[i].tipo == MOPA){
+            indice_mopa = i;
+        }
+    }
+
+    return indice_mopa;
 }
 
 // Pre: Todos los elementos del juego y el terreno deben estar previamente inicializados.
@@ -295,7 +320,13 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
     }
     terreno[juego->cocina.posicion.fil][juego->cocina.posicion.col] = COCINA;
 
-    for(int i = 0; i < juego->cantidad_herramientas; i++){
+    objeto_t mopa = juego->herramientas[buscar_indice_mopa(juego)];
+    bool mozo_tiene_mopa = juego->mozo.tiene_mopa;
+    if(!mozo_tiene_mopa) {
+        terreno[mopa.posicion.fil][mopa.posicion.col] = MOPA;
+    }
+    // ver como posicionar las herramientas
+    for(int i = 1; i < juego->cantidad_herramientas; i++){
         terreno[juego->herramientas[i].posicion.fil][juego->herramientas[i].posicion.col] = juego->herramientas[i].tipo;
     }
 
@@ -345,56 +376,85 @@ coordenada_t nueva_cordenada_linguini(char jugada, juego_t* juego){
 }
 
 
+// Pre: El juego debe estar inicializado ya que se trabajaran con los topes las herramientas y obstaculos.
+// Post: Verifica que la coordenada (del personaje) que viene por parametro, tenga la misma posición que
+//      las herramientas (mopa, moneda o patines) o los obstaculos (charcos).
+//      En caso de que sea la misma, entonces retornará true. En caso contrario, retornará falso.
+bool es_posicion_ocupada(juego_t* juego, coordenada_t coordenada){
+    bool es_ocupada = false;
+
+    for(int i = 1; i < juego->cantidad_herramientas; i++){
+        if(juego->herramientas[i].posicion.fil == coordenada.fil && juego->herramientas[i].posicion.col == coordenada.col){
+            es_ocupada = true;
+        }
+    }
+
+    for(int j = 0; j < juego->cantidad_obstaculos; j++){
+        if(juego->obstaculos[j].posicion.fil == coordenada.fil && juego->obstaculos[j].posicion.col == coordenada.col) {
+            es_ocupada = true;
+        }
+    }
+    return es_ocupada;
+}
+
+void eliminar_mopa(juego_t* juego){
+    juego->herramientas[buscar_indice_mopa(juego)] = juego->herramientas[juego->cantidad_herramientas - 1];
+    juego->cantidad_herramientas--;
+}
+
+void agregar_mopa(juego_t* juego){
+    objeto_t mopa;
+    mopa.tipo = MOPA;
+    mopa.posicion = juego->mozo.posicion;
+    juego->herramientas[juego->cantidad_herramientas] = mopa;
+    juego->cantidad_herramientas++;
+}
 
 // Pre: El terreno y el juego deben estar previamente inicializados, y con todos los objetos correspondientes posicionados en el terreno.
-// Post: En caso de que el personaje este en la misma posición que la mopa, entonces tomará la mopa y se actualizará  
-//      la posición de la mopa (fuera de rango), simulando que la tiene Linguini. 
-//      En caso de que ya tenga la mopa, entonces dejará la mopa en la posición en la que se encuentre (con sus reestricciones), 
+// Post: En caso de que el personaje este en la misma posición que la mopa, entonces tomará la mopa y se actualizará
+//      la posición de la mopa (fuera de rango), simulando que la tiene Linguini.
+//      En caso de que ya tenga la mopa, entonces dejará la mopa en la posición en la que se encuentre (con sus reestricciones),
 //      y se actualizará la posición de la mopa en donde la dejo el personaje.
 void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
-
-    coordenada_t* coordenada_mopa = &(juego->herramientas[0].posicion);
-
+    int indice_mopa = buscar_indice_mopa(juego);
+    coordenada_t* coordenada_mopa = &(juego->herramientas[indice_mopa].posicion);
     coordenada_t* coordenada_personaje = &(juego->mozo.posicion);
-
     coordenada_t* coordenada_cocina = &(juego->cocina.posicion);
 
     bool misma_coordenada_mopa = coordenada_personaje->fil == coordenada_mopa->fil && coordenada_personaje->col == coordenada_mopa->col;
     bool tiene_mopa = juego->mozo.tiene_mopa == true;
-    bool misma_coordenada_cocina = coordenada_personaje-> fil == coordenada_cocina->fil && coordenada_personaje->col == coordenada_cocina ->col;
+    bool misma_coordenada_cocina = coordenada_personaje->fil == coordenada_cocina->fil && coordenada_personaje->col == coordenada_cocina->col;
     bool espacio_vacio = terreno[coordenada_personaje->fil][coordenada_personaje->col] == PERSONAJE;
-    
+    bool misma_coordenada_herramientas = es_posicion_ocupada(juego, *coordenada_personaje);
+
     if(misma_coordenada_mopa && !tiene_mopa) {
-        coordenada_mopa->fil = ESCONDER_MOPA;
-        coordenada_mopa->col = ESCONDER_MOPA;
-        terreno[coordenada_personaje->fil][coordenada_personaje->col] = 'L';
+        eliminar_mopa(juego);
         juego->mozo.tiene_mopa = true;
-    } else if (tiene_mopa && espacio_vacio && !misma_coordenada_cocina){
-        terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = MOPA;
-        coordenada_mopa->fil = coordenada_personaje->fil;
-        coordenada_mopa->col = coordenada_personaje->col;
+    } else if (tiene_mopa && espacio_vacio && !misma_coordenada_cocina && !misma_coordenada_herramientas){
+        agregar_mopa(juego);
         juego->mozo.tiene_mopa = false;
     }
 }
 
 
-// Pre: 
+
+// Pre:
 // Post: Simulando un terreno representado por la matriz de MAX_FILAS x MAX_COLUMNAS, se inicializaran todos los objetos del juego.
 void inicializar_juego(juego_t* juego){
 
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
 
-    
+
     juego->cantidad_mesas = 0;
     juego->cantidad_herramientas = 0;
     juego->dinero = 0;
     juego->movimientos = 0;
     juego->mozo.cantidad_pedidos = 0;
     juego->cantidad_obstaculos = 0;
-    
+
     inicializar_mesas(juego->mesas, &juego->cantidad_mesas, terreno);
-    
+
     inicializar_cocina(juego, terreno);
 
     inicializar_linguini(juego, terreno);
@@ -414,10 +474,10 @@ void inicializar_juego(juego_t* juego){
     for(int i = 0; i < CANTIDAD_CHARCOS; i++) {
         inicializar_obstaculo(CHARCOS, terreno, juego);
     }
-    
+
 }
 
-// Pre: El juego que viene por parametro debe estar previamente inicializado y la acción a realizar, 
+// Pre: El juego que viene por parametro debe estar previamente inicializado y la acción a realizar,
 //      debe ser valida (W,A,S,D o accion de mopa).
 // Post: Verifica que tipo de acción es y en cada caso particular, llamará a una funcion encargada de ejecutar la jugada.
 void realizar_jugada(juego_t* juego, char accion){
@@ -452,17 +512,17 @@ void mostrar_juego(juego_t juego) {
 
 
 // Pre: El juego que viene por parametro debe estar previamente inicializado.
-// Post: Dependiendo del dinero que junto el personaje, retornará JUEGO_GANADO si alcanzo el dinero suficiente. 
-//      Retornará JUEGO_PERDIDO si no lo hizo. Retornará SEGUIR_JUGANDO, si debe seguir jugando.      
+// Post: Dependiendo del dinero que junto el personaje, retornará JUEGO_GANADO si alcanzo el dinero suficiente.
+//      Retornará JUEGO_PERDIDO si no lo hizo. Retornará SEGUIR_JUGANDO, si debe seguir jugando.
 int estado_juego(juego_t juego){
     int dinero_acumulado = juego.dinero;
     int estado = SEGUIR_JUGANDO;
+
     if(dinero_acumulado >= MONEDAS_GANAR_JUEGO) {
         estado = JUEGO_GANADO;
     } else {
         estado = JUEGO_PERDIDO;
     }
-    
+
     return estado;
 }
-

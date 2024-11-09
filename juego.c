@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #define MAX_MOVIMIENTOS 200
 
 #define MOVER_ARRIBA 'W'
@@ -13,7 +12,8 @@
 #define MOVER_IZQ 'A'
 #define ACCION_MOPA 'O'
 
-
+#define JUEGO_GANADO 1
+#define JUEGO_PERDIDO -1
 
 // Pre:
 // Post: Imprime los movimientos validos que puede realizar el jugador.
@@ -44,21 +44,22 @@ int main(){
     juego_t juego;
 
     inicializar_juego(&juego);
-    mostrar_juego(juego);   
+    mostrar_juego(juego);
 
 
     while(juego.movimientos < MAX_MOVIMIENTOS) {
         char jugada;
-        do{  
-            solicitar_jugada(&jugada); 
+        do{
+            solicitar_jugada(&jugada);
         } while(!es_jugada_valida(jugada));
-        
+
         realizar_jugada(&juego, jugada);
         mostrar_juego(juego);
     }
 
 
     int estado = estado_juego(juego);
+
     if(estado == JUEGO_GANADO){
         printf("Ganaste el juego.");
     } else if (estado == JUEGO_PERDIDO){
