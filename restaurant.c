@@ -1,6 +1,7 @@
 #include "restaurant.h"
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -20,6 +21,7 @@
 #define MOVER_DER 'D'
 #define MOVER_IZQ 'A'
 #define ACCION_MOPA 'O'
+#define TOMAR_PEDIDO 'T'
 
 #define JUEGO_GANADO 1
 #define JUEGO_PERDIDO -1
@@ -50,6 +52,9 @@ const int CANTIDAD_CHARCOS = 5;
 const int ESCONDER_MOPA = 200;
 
 const int MONEDAS_GANAR_JUEGO = 150000;
+
+const int MESA_VACIA = 0;
+const int ES_MESA_VACIA = -1;
 
 // Pre:
 // Post: Inicializa todas las posiciones del terreno con un espacio vacio -> ' '
@@ -336,6 +341,13 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
     terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = PERSONAJE;
 }
 
+void disminuir_paciencia_mesas(juego_t* juego){
+    for(int i = 0; i < juego->cantidad_mesas; i++){
+        if(juego->mesas[i].cantidad_comensales > 0){
+            juego->mesas[i].paciencia -= 1;
+        }
+    }
+}
 
 // Pre: El juego y el terreno deben estar previamente inicializados, al igual que la nueva coordenada que tomará el personaje.
 // Post: Verificará que la posición nueva del personaje sea valida (no puede subirse a una mesa ni estar por fuera de los limites).
@@ -345,6 +357,7 @@ void mover_linguini(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego, coord
     if((posicion_nueva != MESA) && esta_dentro_limite(nueva_coordenada)) {
         juego->mozo.posicion = nueva_coordenada;
         juego->movimientos += 1;
+        disminuir_paciencia_mesas(juego);
     }
 }
 
@@ -397,11 +410,12 @@ bool es_posicion_ocupada(juego_t* juego, coordenada_t coordenada){
     return es_ocupada;
 }
 
+// -> Falta agregar las pre y post.
 void eliminar_mopa(juego_t* juego){
     juego->herramientas[buscar_indice_mopa(juego)] = juego->herramientas[juego->cantidad_herramientas - 1];
     juego->cantidad_herramientas--;
 }
-
+// -> Falta agregar las pre y post.
 void agregar_mopa(juego_t* juego){
     objeto_t mopa;
     mopa.tipo = MOPA;
@@ -436,7 +450,76 @@ void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
     }
 }
 
+// -> Falta agregar los pre y post.
+int encontrar_mesa_vacia(juego_t* juego){
+    int indice_mesa_vacia = -1;
+    int i = 0;
+    bool mesa_encontrada = false;
+    while( i < juego->cantidad_mesas && !mesa_encontrada){
+        if(juego->mesas[i].cantidad_comensales == MESA_VACIA){
+            indice_mesa_vacia = i;
+            mesa_encontrada = true;
+        }
+        i++;
+    }
+    return indice_mesa_vacia;
+}
 
+// -> Falta agregar los pre y post.
+void asignar_comensales(juego_t* juego){
+    int cantidad_comensales = rand() % 4 + 1;
+    int indice_mesa_vacia = encontrar_mesa_vacia(juego);
+
+    if(indice_mesa_vacia != ES_MESA_VACIA && juego->movimientos % 15 == 0) {
+        mesa_t* mesa = &juego->mesas[indice_mesa_vacia];
+        mesa->cantidad_comensales = cantidad_comensales;
+        if(cantidad_comensales == MIN_COMENSALES){
+            mesa->cantidad_lugares = MIN_COMENSALES;
+        } else {
+            mesa->cantidad_lugares = MAX_COMENSALES;
+        }
+        mesa->paciencia = rand() % 200 + 100;
+        // printf(" fil:%i, col:%i", mesa->posicion[indice_mesa_vacia].fil, mesa->posicion[indice_mesa_vacia].col);
+        // printf(" comensales :%i", mesa->cantidad_comensales);
+        // printf(" paciencia :%i", mesa->paciencia);
+    }
+}
+
+void desocupar_mesa(juego_t* juego){
+    int i = 0;
+    while(i < juego->cantidad_mesas) {
+        if(juego->mesas[i].paciencia == 0){
+            juego->mesas[i].cantidad_comensales = MESA_VACIA;
+        }
+        i++;
+    }
+}
+
+bool esta_cerca_mesa(juego_t* juego){
+    int distancia;
+    bool linguini_cerca_mesa = false;
+    int i = 0;
+    int j = 0;
+    while(i < juego->cantidad_mesas){
+        while(j < juego->mesas[i].cantidad_lugares){
+            distancia = distancia_a_mesa(juego->mozo.posicion, juego->mesas[i].posicion[j]);
+            if(distancia == 1){
+                linguini_cerca_mesa = true;
+            }
+            j++;
+        }
+        j = 0;
+        i++;
+    }
+
+    return linguini_cerca_mesa;
+}
+
+void tomar_pedido(juego_t* juego){
+    if(esta_cerca_mesa(juego)){
+        printf("cerca de una mesa");
+    }
+}
 
 // Pre:
 // Post: Simulando un terreno representado por la matriz de MAX_FILAS x MAX_COLUMNAS, se inicializaran todos los objetos del juego.
@@ -485,9 +568,13 @@ void realizar_jugada(juego_t* juego, char accion){
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(juego, terreno);
+    asignar_comensales(juego);
+    desocupar_mesa(juego);
 
     if(accion == ACCION_MOPA) {
         accion_de_mopa(terreno, juego);
+    } else if(accion == TOMAR_PEDIDO) {
+        tomar_pedido(juego);
     } else {
         mover_linguini(terreno, juego, nueva_cordenada_linguini(accion, juego));
     }
@@ -501,7 +588,6 @@ void mostrar_juego(juego_t juego) {
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(&juego, terreno);
 
-    system("clear");
     imprimir_terreno(terreno);
     printf("\n");
 
