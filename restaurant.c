@@ -14,6 +14,8 @@
 #define MONEDA 'M'
 #define PATINES 'P'
 #define CHARCOS 'H'
+#define CUCARACHA 'U'
+#define MESA_OCUPADA 'X'
 
 
 #define MOVER_ARRIBA 'W'
@@ -320,7 +322,11 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
 
     for(int i = 0; i < juego->cantidad_mesas; i++){
         for(int p = 0; p < juego->mesas[i].cantidad_lugares; p++){
-            terreno[juego->mesas[i].posicion[p].fil][juego->mesas[i].posicion[p].col] = MESA;
+            if(p < juego->mesas[i].cantidad_comensales){
+                terreno[juego->mesas[i].posicion[p].fil][juego->mesas[i].posicion[p].col] = MESA_OCUPADA;
+            } else {
+                terreno[juego->mesas[i].posicion[p].fil][juego->mesas[i].posicion[p].col] = MESA;
+            }
         }
     }
     terreno[juego->cocina.posicion.fil][juego->cocina.posicion.col] = COCINA;
@@ -341,10 +347,18 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
     terreno[juego->mozo.posicion.fil][juego->mozo.posicion.col] = PERSONAJE;
 }
 
+// falta chequear si esta bien.
 void disminuir_paciencia_mesas(juego_t* juego){
     for(int i = 0; i < juego->cantidad_mesas; i++){
-        if(juego->mesas[i].cantidad_comensales > 0){
-            juego->mesas[i].paciencia -= 1;
+        for(int j = 0; j < juego->mesas[i].cantidad_lugares; j++){
+            bool hay_comensales = juego->mesas[i].cantidad_comensales > 0;
+            bool es_cucaracha = juego->obstaculos[i].tipo == CUCARACHA;
+            bool distancia_cucaracha_a_mesa = distancia_a_mesa(juego->mesas[i].posicion[j], juego->obstaculos[i].posicion) <= 2;
+            if(hay_comensales && es_cucaracha && distancia_cucaracha_a_mesa){
+                juego->mesas[i].paciencia -= 3;
+            } else if(hay_comensales){
+                    juego->mesas[i].paciencia -= 1;
+            }
         }
     }
 }
@@ -470,18 +484,16 @@ void asignar_comensales(juego_t* juego){
     int cantidad_comensales = rand() % 4 + 1;
     int indice_mesa_vacia = encontrar_mesa_vacia(juego);
 
-    if(indice_mesa_vacia != ES_MESA_VACIA && juego->movimientos % 15 == 0) {
+    if(indice_mesa_vacia != ES_MESA_VACIA) {
         mesa_t* mesa = &juego->mesas[indice_mesa_vacia];
         mesa->cantidad_comensales = cantidad_comensales;
+
         if(cantidad_comensales == MIN_COMENSALES){
-            mesa->cantidad_lugares = MIN_COMENSALES;
+            mesa->cantidad_comensales = MIN_COMENSALES;
         } else {
-            mesa->cantidad_lugares = MAX_COMENSALES;
+            mesa->cantidad_comensales = cantidad_comensales;
         }
-        mesa->paciencia = rand() % 200 + 100;
-        // printf(" fil:%i, col:%i", mesa->posicion[indice_mesa_vacia].fil, mesa->posicion[indice_mesa_vacia].col);
-        // printf(" comensales :%i", mesa->cantidad_comensales);
-        // printf(" paciencia :%i", mesa->paciencia);
+        mesa->paciencia = rand() % 100 + 100;
     }
 }
 
@@ -495,6 +507,7 @@ void desocupar_mesa(juego_t* juego){
     }
 }
 
+// chequea si linguini esta cerca de mesa, completar bien los pre y post.
 bool esta_cerca_mesa(juego_t* juego){
     int distancia;
     bool linguini_cerca_mesa = false;
@@ -568,7 +581,15 @@ void realizar_jugada(juego_t* juego, char accion){
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(juego, terreno);
-    asignar_comensales(juego);
+
+    if(juego->movimientos % 15 == 0) {
+        asignar_comensales(juego);
+    }
+
+    if(juego->movimientos >= 25 && juego->movimientos % 25 == 0){
+        inicializar_obstaculo(CUCARACHA, terreno, juego);
+    }
+
     desocupar_mesa(juego);
 
     if(accion == ACCION_MOPA) {
@@ -587,10 +608,11 @@ void mostrar_juego(juego_t juego) {
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(&juego, terreno);
+    system("clear");
 
     imprimir_terreno(terreno);
-    printf("\n");
 
+    printf("\n");
     printf("Cantidad de movimientos: %i\n", juego.movimientos);
     printf("Cantidad Pedidos: %i\n", juego.mozo.cantidad_pedidos);
     printf("Dinero: %i\n", juego.dinero);
