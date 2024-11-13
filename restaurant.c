@@ -2,10 +2,12 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #define MIN_COMENSALES 1
+#define MAX_MOVIMIENTOS 200
 
 #define COCINA 'C'
 #define MESA 'T'
@@ -16,7 +18,6 @@
 #define CHARCOS 'H'
 #define CUCARACHA 'U'
 #define MESA_OCUPADA 'X'
-
 
 #define MOVER_ARRIBA 'W'
 #define MOVER_ABAJO 'S'
@@ -34,15 +35,18 @@
 #define PRECIO_MESA_GRUPAL 20000
 #define PRECIO_MESA_INDIVIDUAL 5000
 
-const int MILANESA_NAPOLITANA = 1;
+const int ID_MESA_NAPOLITANA = -1;
+const char MILANESA_NAPOLITANA = 'M';
 const int TIEMPO_MILANESA_NAPOLITANA = 30;
-const int HAMBURGUESA = 2;
+const int ID_HAMBURGUESA = 2;
+const char HAMBURGUESA = 'H';
 const int TIEMPO_HAMBURGUESA = 15;
-const int PARRILLA = 3;
+const int ID_PARRILLA = 3;
+const char PARRILLA = 'P';
 const int TIEMPO_PARRILLA = 20;
-const int RATATOUILLE = 4;
+const int ID_RATATOUILLE = 4;
+const char RATATOUILLE = 'R';
 const int TIEMPO_RATATOUILLE = 25;
-
 
 const int CANTIDAD_MESAS_INDIVIDUALES = 6;
 const int CANTIDAD_MESAS_COMPARTIDAS = 4;
@@ -204,6 +208,7 @@ void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     }
 }
 
+
 // Pre: Es necesario que las mesas, su cantidad (mayor o igual a 0) y el terreno (matriz de 20x20) esten inicializados.
 // Post: Crea mesas compartidas e individuales y las va asignando al array de las mesas.
 void inicializar_mesas(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, char terreno[MAX_FILAS][MAX_COLUMNAS]){
@@ -349,16 +354,18 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
 
 // falta chequear si esta bien.
 void disminuir_paciencia_mesas(juego_t* juego){
+    int c = 0;
     for(int i = 0; i < juego->cantidad_mesas; i++){
         for(int j = 0; j < juego->mesas[i].cantidad_lugares; j++){
             bool hay_comensales = juego->mesas[i].cantidad_comensales > 0;
-            bool es_cucaracha = juego->obstaculos[i].tipo == CUCARACHA;
-            bool distancia_cucaracha_a_mesa = distancia_a_mesa(juego->mesas[i].posicion[j], juego->obstaculos[i].posicion) <= 2;
+            bool es_cucaracha = juego->obstaculos[c].tipo == CUCARACHA;
+            bool distancia_cucaracha_a_mesa = distancia_a_mesa(juego->mesas[i].posicion[j], juego->obstaculos[c].posicion) <= 2;
             if(hay_comensales && es_cucaracha && distancia_cucaracha_a_mesa){
                 juego->mesas[i].paciencia -= 3;
             } else if(hay_comensales){
                     juego->mesas[i].paciencia -= 1;
             }
+            c++;
         }
     }
 }
@@ -368,7 +375,7 @@ void disminuir_paciencia_mesas(juego_t* juego){
 //      En caso de que sea valida, entonces le asignará esa nueva coordenada al personaje y aumentará la cantidad de movimientos realizados.
 void mover_linguini(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego, coordenada_t nueva_coordenada){
     char posicion_nueva = terreno[nueva_coordenada.fil][nueva_coordenada.col];
-    if((posicion_nueva != MESA) && esta_dentro_limite(nueva_coordenada)) {
+    if((posicion_nueva != MESA && posicion_nueva != MESA_OCUPADA) && esta_dentro_limite(nueva_coordenada)) {
         juego->mozo.posicion = nueva_coordenada;
         juego->movimientos += 1;
         disminuir_paciencia_mesas(juego);
@@ -493,7 +500,9 @@ void asignar_comensales(juego_t* juego){
         } else {
             mesa->cantidad_comensales = cantidad_comensales;
         }
-        mesa->paciencia = rand() % 100 + 100;
+        mesa->paciencia = rand() % 15 + 0;
+        printf(" fil:%i, col:%i", mesa->posicion[0].fil, mesa->posicion[0].col);
+        printf("paciencia: %i", mesa->paciencia);
     }
 }
 
@@ -507,33 +516,78 @@ void desocupar_mesa(juego_t* juego){
     }
 }
 
+void asignar_id_mesa(juego_t* juego, pedido_t* pedido){
+    int id;
+    int i = 0;
+    while(i < juego->mozo.cantidad_pedidos){
+        id = rand() % 1000 + 1;
+        if(id != juego->mozo.pedidos[i].id_mesa){
+            pedido->id_mesa = id;
+        }
+    }
+}
+
+
+void imprimir_pedidos(juego_t* juego){
+    for(int i = 0; i < juego->cantidad_mesas; i++){
+        if(juego->mesas[i].pedido_tomado){
+            printf(" fil:%i-col:%i", juego->mesas[i].posicion[0].fil, juego->mesas[i].posicion[0].col);
+        }
+    }
+}
+
+void imprimir_bandeja(juego_t* juego, mesa_t* mesa){
+    printf(" cant-bandeja:%i\n", juego->mozo.cantidad_bandeja);
+    printf(" cant-comensales%i\n", mesa->cantidad_comensales);
+    for(int i = 0; i < juego->mozo.cantidad_bandeja; i++){
+        printf(" %c", juego->mozo.bandeja[i].platos[0]);
+    }
+}
+
+
+void asignar_pedido_en_bandeja(juego_t* juego, mesa_t* mesa){
+    pedido_t pedido;
+    pedido.cantidad_platos = 0;
+    asignar_id_mesa(juego, &pedido);
+    for(int i = 0; i < mesa->cantidad_comensales; i++){
+        int generar_pedido = rand() % 4 + 1;
+        if(generar_pedido == ID_MESA_NAPOLITANA){
+            pedido.platos[pedido.cantidad_platos] = MILANESA_NAPOLITANA;
+        } else if(generar_pedido == ID_HAMBURGUESA){
+            pedido.platos[pedido.cantidad_platos] = HAMBURGUESA;
+        } else if(generar_pedido == ID_PARRILLA){
+            pedido.platos[pedido.cantidad_platos] = PARRILLA;
+        } else {
+            pedido.platos[pedido.cantidad_platos] = RATATOUILLE;
+        }
+        pedido.cantidad_platos += 1;
+    }
+    juego->mozo.cantidad_bandeja += 1;
+    mesa->pedido_tomado = true;
+
+}
+
 // chequea si linguini esta cerca de mesa, completar bien los pre y post.
-bool esta_cerca_mesa(juego_t* juego){
+void tomar_pedidos_mesas(juego_t* juego){
     int distancia;
-    bool linguini_cerca_mesa = false;
     int i = 0;
     int j = 0;
     while(i < juego->cantidad_mesas){
         while(j < juego->mesas[i].cantidad_lugares){
             distancia = distancia_a_mesa(juego->mozo.posicion, juego->mesas[i].posicion[j]);
-            if(distancia == 1){
-                linguini_cerca_mesa = true;
+            bool hay_comensales_en_mesa = juego->mesas[i].cantidad_comensales > 0;
+            bool tiene_espacio_en_bandeja = juego->mozo.cantidad_pedidos < MAX_PEDIDOS;
+            bool mesa_tiene_pedido = juego->mesas[i].pedido_tomado;
+            if(distancia == 1 && tiene_espacio_en_bandeja && hay_comensales_en_mesa && !mesa_tiene_pedido){
+                asignar_pedido_en_bandeja(juego, &juego->mesas[i]);
+                imprimir_bandeja(juego, &juego->mesas[i]);
             }
             j++;
         }
         j = 0;
         i++;
     }
-
-    return linguini_cerca_mesa;
 }
-
-void tomar_pedido(juego_t* juego){
-    if(esta_cerca_mesa(juego)){
-        printf("cerca de una mesa");
-    }
-}
-
 // Pre:
 // Post: Simulando un terreno representado por la matriz de MAX_FILAS x MAX_COLUMNAS, se inicializaran todos los objetos del juego.
 void inicializar_juego(juego_t* juego){
@@ -595,7 +649,8 @@ void realizar_jugada(juego_t* juego, char accion){
     if(accion == ACCION_MOPA) {
         accion_de_mopa(terreno, juego);
     } else if(accion == TOMAR_PEDIDO) {
-        tomar_pedido(juego);
+        tomar_pedidos_mesas(juego);
+        imprimir_pedidos(juego);
     } else {
         mover_linguini(terreno, juego, nueva_cordenada_linguini(accion, juego));
     }
@@ -608,12 +663,12 @@ void mostrar_juego(juego_t juego) {
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(&juego, terreno);
-    system("clear");
+    // system("clear");
 
     imprimir_terreno(terreno);
 
     printf("\n");
-    printf("Cantidad de movimientos: %i\n", juego.movimientos);
+    printf("Cantidad de movimientos: %i de %i\n", juego.movimientos, MAX_MOVIMIENTOS);
     printf("Cantidad Pedidos: %i\n", juego.mozo.cantidad_pedidos);
     printf("Dinero: %i\n", juego.dinero);
 }
