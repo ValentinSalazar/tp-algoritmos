@@ -500,16 +500,14 @@ void asignar_comensales(juego_t* juego){
 
     if(indice_mesa_vacia != ES_MESA_VACIA) {
         mesa_t* mesa = &juego->mesas[indice_mesa_vacia];
-        mesa->cantidad_comensales = cantidad_comensales;
+        // mesa->cantidad_comensales = cantidad_comensales;
 
         if(cantidad_comensales == MIN_COMENSALES){
             mesa->cantidad_comensales = MIN_COMENSALES;
         } else {
             mesa->cantidad_comensales = cantidad_comensales;
         }
-        mesa->paciencia = rand() % 3 + 1;
-        printf(" fil:%i, col:%i", mesa->posicion[0].fil, mesa->posicion[0].col);
-        printf("paciencia: %i", mesa->paciencia);
+        mesa->paciencia = rand() % 100 + 100;
     }
 }
 
@@ -518,7 +516,10 @@ void desocupar_mesa(juego_t* juego){
     while(i < juego->cantidad_mesas) {
         if(juego->mesas[i].paciencia == 0 && juego->mesas[i].cantidad_comensales > 0){
             juego->mesas[i].cantidad_comensales = MESA_VACIA;
-            juego->mozo.cantidad_pedidos --;
+            if(juego->mozo.cantidad_pedidos > 0){
+               juego->mozo.cantidad_pedidos --;
+            }
+
         }
         i++;
     }
@@ -532,6 +533,7 @@ void asignar_id_mesa(juego_t* juego, pedido_t* pedido){
         if(id != juego->mozo.pedidos[i].id_mesa){
             pedido->id_mesa = id;
         }
+        i++;
     }
 }
 
