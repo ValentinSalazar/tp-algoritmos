@@ -58,6 +58,7 @@ const int CANTIDAD_CHARCOS = 5;
 const int ESCONDER_MOPA = 200;
 
 const int MONEDAS_GANAR_JUEGO = 150000;
+const int DINERO_POR_MOENDA = 1000;
 
 const int MESA_VACIA = 0;
 const int ES_MESA_VACIA = -1;
@@ -114,7 +115,7 @@ int distancia_a_mesa(coordenada_t primer_coordenada, coordenada_t segunda_coorde
 
 // Pre:
 // Post: En caso de que no haya mesas en el juego, retornará que la distancia de la mesa nueva es valida.
-//      Pero, si hay deberá comparar las coordenadas de cada una de las mesas que esten disponibles con cada coordenada de la mesa nueva,
+//      Pero si hay, deberá comparar las coordenadas de cada una de las mesas que esten disponibles con cada coordenada de la mesa nueva,
 //      ya sea compartida o individual.
 bool es_distancia_valida(mesa_t mesas[MAX_MESAS], int* cantidad_mesas, mesa_t mesa_nueva){
     bool distancia_valida = true;
@@ -207,7 +208,6 @@ void asignar_mesa(mesa_t mesa, char terreno[MAX_FILAS][MAX_COLUMNAS]){
         terreno[mesa.posicion[i].fil][mesa.posicion[i].col] = MESA;
     }
 }
-
 
 // Pre: Es necesario que las mesas, su cantidad (mayor o igual a 0) y el terreno (matriz de 20x20) esten inicializados.
 // Post: Crea mesas compartidas e individuales y las va asignando al array de las mesas.
@@ -354,18 +354,25 @@ void posicionar_elementos_terreno(juego_t* juego, char terreno[MAX_FILAS][MAX_CO
 
 // falta chequear si esta bien.
 void disminuir_paciencia_mesas(juego_t* juego){
-    int c = 0;
+    bool hay_comensales, es_cucaracha, distancia_cucaracha_a_mesa, hay_cucaracha_cerca;
     for(int i = 0; i < juego->cantidad_mesas; i++){
         for(int j = 0; j < juego->mesas[i].cantidad_lugares; j++){
-            bool hay_comensales = juego->mesas[i].cantidad_comensales > 0;
-            bool es_cucaracha = juego->obstaculos[c].tipo == CUCARACHA;
-            bool distancia_cucaracha_a_mesa = distancia_a_mesa(juego->mesas[i].posicion[j], juego->obstaculos[c].posicion) <= 2;
-            if(hay_comensales && es_cucaracha && distancia_cucaracha_a_mesa){
-                juego->mesas[i].paciencia -= 3;
-            } else if(hay_comensales){
-                    juego->mesas[i].paciencia -= 1;
+            hay_comensales = juego->mesas[i].cantidad_comensales > 0;
+            hay_cucaracha_cerca = false;
+            for(int c = 0; c < juego->cantidad_obstaculos; c++){
+                es_cucaracha = juego->obstaculos[c].tipo == CUCARACHA;
+                distancia_cucaracha_a_mesa = distancia_a_mesa(juego->mesas[i].posicion[j], juego->obstaculos[c].posicion) <= 2;
+                if(hay_comensales && es_cucaracha && distancia_cucaracha_a_mesa){
+                    hay_cucaracha_cerca = true;
+                }
             }
-            c++;
+        }
+        if(hay_comensales) {
+            if(hay_cucaracha_cerca){
+                juego->mesas[i].paciencia -= 3;
+            } else {
+                juego->mesas[i].paciencia -= 1;
+            }
         }
     }
 }
@@ -500,7 +507,7 @@ void asignar_comensales(juego_t* juego){
         } else {
             mesa->cantidad_comensales = cantidad_comensales;
         }
-        mesa->paciencia = rand() % 15 + 0;
+        mesa->paciencia = rand() % 3 + 1;
         printf(" fil:%i, col:%i", mesa->posicion[0].fil, mesa->posicion[0].col);
         printf("paciencia: %i", mesa->paciencia);
     }
@@ -509,8 +516,9 @@ void asignar_comensales(juego_t* juego){
 void desocupar_mesa(juego_t* juego){
     int i = 0;
     while(i < juego->cantidad_mesas) {
-        if(juego->mesas[i].paciencia == 0){
+        if(juego->mesas[i].paciencia == 0 && juego->mesas[i].cantidad_comensales > 0){
             juego->mesas[i].cantidad_comensales = MESA_VACIA;
+            juego->mozo.cantidad_pedidos --;
         }
         i++;
     }
@@ -524,23 +532,6 @@ void asignar_id_mesa(juego_t* juego, pedido_t* pedido){
         if(id != juego->mozo.pedidos[i].id_mesa){
             pedido->id_mesa = id;
         }
-    }
-}
-
-
-void imprimir_pedidos(juego_t* juego){
-    for(int i = 0; i < juego->cantidad_mesas; i++){
-        if(juego->mesas[i].pedido_tomado){
-            printf(" fil:%i-col:%i", juego->mesas[i].posicion[0].fil, juego->mesas[i].posicion[0].col);
-        }
-    }
-}
-
-void imprimir_bandeja(juego_t* juego, mesa_t* mesa){
-    printf(" cant-bandeja:%i\n", juego->mozo.cantidad_bandeja);
-    printf(" cant-comensales%i\n", mesa->cantidad_comensales);
-    for(int i = 0; i < juego->mozo.cantidad_bandeja; i++){
-        printf(" %c", juego->mozo.bandeja[i].platos[0]);
     }
 }
 
@@ -564,10 +555,11 @@ void asignar_pedido_en_bandeja(juego_t* juego, mesa_t* mesa){
     }
     juego->mozo.cantidad_bandeja += 1;
     mesa->pedido_tomado = true;
+    juego->mozo.cantidad_pedidos += 1;
 
 }
 
-// chequea si linguini esta cerca de mesa, completar bien los pre y post.
+// completar bien los pre y post.
 void tomar_pedidos_mesas(juego_t* juego){
     int distancia;
     int i = 0;
@@ -580,7 +572,6 @@ void tomar_pedidos_mesas(juego_t* juego){
             bool mesa_tiene_pedido = juego->mesas[i].pedido_tomado;
             if(distancia == 1 && tiene_espacio_en_bandeja && hay_comensales_en_mesa && !mesa_tiene_pedido){
                 asignar_pedido_en_bandeja(juego, &juego->mesas[i]);
-                imprimir_bandeja(juego, &juego->mesas[i]);
             }
             j++;
         }
@@ -588,6 +579,59 @@ void tomar_pedidos_mesas(juego_t* juego){
         i++;
     }
 }
+
+void eliminar_moneda(juego_t* juego, int indice){
+    juego->herramientas[indice] = juego->herramientas[juego->cantidad_herramientas - 1];
+    juego->cantidad_herramientas -= 1;
+}
+
+void recolectar_moneda(juego_t* juego){
+    coordenada_t* coordenada_linguini = &juego->mozo.posicion;
+    bool misma_fila, misma_columna, es_moneda;
+    for(int i = 0; i < juego->cantidad_herramientas; i++){
+        es_moneda = juego->herramientas[i].tipo == MONEDA;
+        misma_fila = coordenada_linguini->fil == juego->herramientas[i].posicion.fil;
+        misma_columna = coordenada_linguini->col == juego->herramientas[i].posicion.col;
+        if(es_moneda && misma_fila && misma_columna){
+            juego->dinero += DINERO_POR_MOENDA;
+            eliminar_moneda(juego, i);
+        }
+    }
+}
+
+void eliminar_patin(juego_t* juego, int indice){
+    juego->herramientas[indice] = juego->herramientas[juego->cantidad_herramientas - 1];
+    juego->cantidad_herramientas -= 1;
+}
+
+void recolectar_patines(juego_t* juego){
+    coordenada_t* coordenada_linguini = &juego->mozo.posicion;
+    bool misma_fila, misma_columna, es_patin;
+    for(int i = 0; i < juego->cantidad_herramientas; i++){
+        es_patin = juego->herramientas[i].tipo == PATINES;
+        misma_fila = coordenada_linguini->fil == juego->herramientas[i].posicion.fil;
+        misma_columna = coordenada_linguini->col == juego->herramientas[i].posicion.col;
+        if(es_patin && misma_fila && misma_columna){
+            juego->mozo.cantidad_patines += 1;
+            eliminar_patin(juego, i);
+        }
+    }
+}
+
+void eliminar_cucarachas(juego_t* juego){
+    coordenada_t coordenada_linguini = juego->mozo.posicion;
+    bool es_cucaracha, misma_fila, misma_columna;
+    for(int i = 0; i < juego->cantidad_obstaculos; i++){
+        es_cucaracha = juego->obstaculos[i].tipo == CUCARACHA;
+        misma_fila = coordenada_linguini.fil == juego->obstaculos[i].posicion.fil;
+        misma_columna = coordenada_linguini.col == juego->obstaculos[i].posicion.col;
+        if(es_cucaracha && misma_fila && misma_columna){
+            juego->obstaculos[i] = juego->obstaculos[juego->cantidad_obstaculos - 1];
+            juego->cantidad_obstaculos --;
+        }
+    }
+}
+
 // Pre:
 // Post: Simulando un terreno representado por la matriz de MAX_FILAS x MAX_COLUMNAS, se inicializaran todos los objetos del juego.
 void inicializar_juego(juego_t* juego){
@@ -650,9 +694,11 @@ void realizar_jugada(juego_t* juego, char accion){
         accion_de_mopa(terreno, juego);
     } else if(accion == TOMAR_PEDIDO) {
         tomar_pedidos_mesas(juego);
-        imprimir_pedidos(juego);
     } else {
         mover_linguini(terreno, juego, nueva_cordenada_linguini(accion, juego));
+        recolectar_moneda(juego);
+        recolectar_patines(juego);
+        eliminar_cucarachas(juego);
     }
 }
 
@@ -670,6 +716,7 @@ void mostrar_juego(juego_t juego) {
     printf("\n");
     printf("Cantidad de movimientos: %i de %i\n", juego.movimientos, MAX_MOVIMIENTOS);
     printf("Cantidad Pedidos: %i\n", juego.mozo.cantidad_pedidos);
+    printf("Cantidad Patines: %i\n", juego.mozo.cantidad_patines);
     printf("Dinero: %i\n", juego.dinero);
 }
 
