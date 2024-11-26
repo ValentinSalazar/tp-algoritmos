@@ -12,7 +12,7 @@
 #define MOVER_IZQ 'A'
 #define ACCION_MOPA 'O'
 #define TOMAR_PEDIDO 'T'
-#define USAR_PATINES 'P'
+#define ACTIVAR_PATINES 'P'
 
 #define JUEGO_GANADO 1
 #define JUEGO_PERDIDO -1
@@ -28,7 +28,7 @@ void imprimir_movimientos_validos(){
 // Pre: Llegara un caracter por parametro representando la jugada que ha hecho el usuario.
 // Post: Verifica que esa jugada es valida (W,A,S,D o accion de mopa) y retorna true en caso que sea valida, en caso contrario false.
 bool es_jugada_valida(char jugada){
-    return jugada == MOVER_ARRIBA || jugada == MOVER_ABAJO || jugada == MOVER_DER || jugada == MOVER_IZQ || jugada == ACCION_MOPA || jugada == TOMAR_PEDIDO || jugada == USAR_PATINES;
+    return jugada == MOVER_ARRIBA || jugada == MOVER_ABAJO || jugada == MOVER_DER || jugada == MOVER_IZQ || jugada == ACCION_MOPA || jugada == TOMAR_PEDIDO || jugada == ACTIVAR_PATINES;
 }
 
 // Pre: El puntero de la jugada debe estar inicializado.

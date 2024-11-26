@@ -25,7 +25,7 @@
 #define MOVER_IZQ 'A'
 #define ACCION_MOPA 'O'
 #define TOMAR_PEDIDO 'T'
-#define USAR_PATINES 'P'
+#define ACTIVAR_PATINES 'P'
 
 #define JUEGO_GANADO 1
 #define JUEGO_PERDIDO -1
@@ -66,6 +66,8 @@ const int DINERO_POR_MOENDA = 1000;
 
 const int MESA_VACIA = 0;
 const int ES_MESA_VACIA = -1;
+
+const int ERROR_ASIGNAR_MEMORIA = -1;
 
 // Pre:
 // Post: Inicializa todas las posiciones del terreno con un espacio vacio -> ' '
@@ -384,15 +386,102 @@ void disminuir_paciencia_mesas(juego_t* juego){
     }
 }
 
+
+void eliminar_patin(juego_t* juego, int indice){
+    juego->herramientas[indice] = juego->herramientas[juego->cantidad_herramientas - 1];
+    juego->cantidad_herramientas -= 1;
+}
+
+void recolectar_patines(juego_t* juego){
+    coordenada_t* coordenada_linguini = &juego->mozo.posicion;
+    bool misma_fila, misma_columna, es_patin;
+    for(int i = 0; i < juego->cantidad_herramientas; i++){
+        es_patin = juego->herramientas[i].tipo == PATINES;
+        misma_fila = coordenada_linguini->fil == juego->herramientas[i].posicion.fil;
+        misma_columna = coordenada_linguini->col == juego->herramientas[i].posicion.col;
+        if(es_patin && misma_fila && misma_columna){
+            juego->mozo.cantidad_patines += 1;
+            eliminar_patin(juego, i);
+        }
+    }
+}
+
+void eliminar_moneda(juego_t* juego, int indice){
+    juego->herramientas[indice] = juego->herramientas[juego->cantidad_herramientas - 1];
+    juego->cantidad_herramientas -= 1;
+}
+
+void recolectar_moneda(juego_t* juego){
+    coordenada_t* coordenada_linguini = &juego->mozo.posicion;
+    bool misma_fila, misma_columna, es_moneda;
+    for(int i = 0; i < juego->cantidad_herramientas; i++){
+        es_moneda = juego->herramientas[i].tipo == MONEDA;
+        misma_fila = coordenada_linguini->fil == juego->herramientas[i].posicion.fil;
+        misma_columna = coordenada_linguini->col == juego->herramientas[i].posicion.col;
+        if(es_moneda && misma_fila && misma_columna){
+            juego->dinero += DINERO_POR_MOENDA;
+            eliminar_moneda(juego, i);
+        }
+    }
+}
+
+void eliminar_cucarachas(juego_t* juego){
+    coordenada_t coordenada_linguini = juego->mozo.posicion;
+    bool es_cucaracha, misma_fila, misma_columna;
+    for(int i = 0; i < juego->cantidad_obstaculos; i++){
+        es_cucaracha = juego->obstaculos[i].tipo == CUCARACHA;
+        misma_fila = coordenada_linguini.fil == juego->obstaculos[i].posicion.fil;
+        misma_columna = coordenada_linguini.col == juego->obstaculos[i].posicion.col;
+        if(es_cucaracha && misma_fila && misma_columna){
+            juego->obstaculos[i] = juego->obstaculos[juego->cantidad_obstaculos - 1];
+            juego->cantidad_obstaculos --;
+        }
+    }
+}
+
+void liberar_mesa(juego_t* juego, int indice_mesa){
+    juego->mesas[indice_mesa].cantidad_comensales = 0;
+    juego->mesas[indice_mesa].paciencia = 0;
+    juego->mesas[indice_mesa].pedido_tomado = false;
+    juego->mozo.cantidad_bandeja = 0;
+}
+
+void eliminar_bandeja(juego_t* juego){
+    bool es_charco, misma_fila, misma_columna;
+    for(int i = 0; i < juego->cantidad_obstaculos; i++){
+        es_charco = juego->obstaculos[i].tipo == CHARCOS;
+        misma_fila = juego->obstaculos[i].posicion.fil == juego->mozo.posicion.fil;
+        misma_columna = juego->obstaculos[i].posicion.col == juego->mozo.posicion.col;
+        if(es_charco && misma_fila && misma_columna){
+            // no esta entrando al for porque todavia no tenemos pedidos en la bandeja.
+            for(int j = 0; j < juego->mozo.cantidad_bandeja; j++){
+                liberar_mesa(juego, juego->mozo.bandeja[j].id_mesa);
+            }
+        }
+    }
+}
+
 // Pre: El juego y el terreno deben estar previamente inicializados, al igual que la nueva coordenada que tomará el personaje.
 // Post: Verificará que la posición nueva del personaje sea valida (no puede subirse a una mesa ni estar por fuera de los limites).
 //      En caso de que sea valida, entonces le asignará esa nueva coordenada al personaje y aumentará la cantidad de movimientos realizados.
 void mover_linguini(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego, coordenada_t nueva_coordenada){
     char posicion_nueva = terreno[nueva_coordenada.fil][nueva_coordenada.col];
-    if((posicion_nueva != MESA && posicion_nueva != MESA_OCUPADA) && esta_dentro_limite(nueva_coordenada)) {
+    bool es_mesa = posicion_nueva == MESA;
+    bool es_mesa_ocupada = posicion_nueva == MESA_OCUPADA;
+    bool dentro_limite = esta_dentro_limite(nueva_coordenada);
+    bool mozo_tiene_mopa = juego->mozo.tiene_mopa;
+    if((!es_mesa && !es_mesa_ocupada) && dentro_limite) {
         juego->mozo.posicion = nueva_coordenada;
-        juego->movimientos += 1;
-        disminuir_paciencia_mesas(juego);
+        if(!juego->mozo.patines_puestos){
+            juego->movimientos += 1;
+            disminuir_paciencia_mesas(juego);
+        }
+        if(!mozo_tiene_mopa){
+            recolectar_moneda(juego);
+            recolectar_patines(juego);
+            eliminar_cucarachas(juego);
+            eliminar_bandeja(juego);
+        }
     }
 }
 
@@ -599,57 +688,7 @@ void tomar_pedidos_mesas(juego_t* juego){
     }
 }
 
-void eliminar_moneda(juego_t* juego, int indice){
-    juego->herramientas[indice] = juego->herramientas[juego->cantidad_herramientas - 1];
-    juego->cantidad_herramientas -= 1;
-}
 
-void recolectar_moneda(juego_t* juego){
-    coordenada_t* coordenada_linguini = &juego->mozo.posicion;
-    bool misma_fila, misma_columna, es_moneda;
-    for(int i = 0; i < juego->cantidad_herramientas; i++){
-        es_moneda = juego->herramientas[i].tipo == MONEDA;
-        misma_fila = coordenada_linguini->fil == juego->herramientas[i].posicion.fil;
-        misma_columna = coordenada_linguini->col == juego->herramientas[i].posicion.col;
-        if(es_moneda && misma_fila && misma_columna){
-            juego->dinero += DINERO_POR_MOENDA;
-            eliminar_moneda(juego, i);
-        }
-    }
-}
-
-void eliminar_patin(juego_t* juego, int indice){
-    juego->herramientas[indice] = juego->herramientas[juego->cantidad_herramientas - 1];
-    juego->cantidad_herramientas -= 1;
-}
-
-void recolectar_patines(juego_t* juego){
-    coordenada_t* coordenada_linguini = &juego->mozo.posicion;
-    bool misma_fila, misma_columna, es_patin;
-    for(int i = 0; i < juego->cantidad_herramientas; i++){
-        es_patin = juego->herramientas[i].tipo == PATINES;
-        misma_fila = coordenada_linguini->fil == juego->herramientas[i].posicion.fil;
-        misma_columna = coordenada_linguini->col == juego->herramientas[i].posicion.col;
-        if(es_patin && misma_fila && misma_columna){
-            juego->mozo.cantidad_patines += 1;
-            eliminar_patin(juego, i);
-        }
-    }
-}
-
-void eliminar_cucarachas(juego_t* juego){
-    coordenada_t coordenada_linguini = juego->mozo.posicion;
-    bool es_cucaracha, misma_fila, misma_columna;
-    for(int i = 0; i < juego->cantidad_obstaculos; i++){
-        es_cucaracha = juego->obstaculos[i].tipo == CUCARACHA;
-        misma_fila = coordenada_linguini.fil == juego->obstaculos[i].posicion.fil;
-        misma_columna = coordenada_linguini.col == juego->obstaculos[i].posicion.col;
-        if(es_cucaracha && misma_fila && misma_columna){
-            juego->obstaculos[i] = juego->obstaculos[juego->cantidad_obstaculos - 1];
-            juego->cantidad_obstaculos --;
-        }
-    }
-}
 
 
 void eliminar_charco(juego_t* juego, int indice){
@@ -672,42 +711,52 @@ void limpiar_charco(juego_t* juego){
     }
 }
 
-void liberar_mesa(juego_t* juego, int indice_mesa){
-    juego->mesas[indice_mesa].cantidad_comensales = 0;
-    juego->mesas[indice_mesa].paciencia = 0;
-    juego->mesas[indice_mesa].pedido_tomado = false;
-    juego->mozo.cantidad_bandeja = 0;
+bool puede_moverse_con_patines(char terreno[MAX_FILAS][MAX_COLUMNAS], coordenada_t nueva_coordenada){
+    return terreno[nueva_coordenada.fil][nueva_coordenada.col] != MESA && terreno[nueva_coordenada.fil][nueva_coordenada.col] != MESA_OCUPADA;
 }
 
-void eliminar_bandeja(juego_t* juego){
-    bool es_charco, misma_fila, misma_columna;
-    for(int i = 0; i < juego->cantidad_obstaculos; i++){
-        es_charco = juego->obstaculos[i].tipo == CHARCOS;
-        misma_fila = juego->obstaculos[i].posicion.fil == juego->mozo.posicion.fil;
-        misma_columna = juego->obstaculos[i].posicion.col == juego->mozo.posicion.col;
-        if(es_charco && misma_fila && misma_columna){
-            // no esta entrando al for porque todavia no tenemos pedidos en la bandeja.
-            for(int j = 0; j < juego->mozo.cantidad_bandeja; j++){
-                liberar_mesa(juego, juego->mozo.bandeja[j].id_mesa);
-            }
+void mover_linguini_con_patines(coordenada_t nueva_coordenada, char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego, char jugada){
+
+}
+
+
+
+void utilizar_patines(juego_t* juego, char jugada, char terreno[MAX_FILAS][MAX_COLUMNAS]) {
+    coordenada_t nueva_coordenada = juego->mozo.posicion;
+    bool flag = true;
+    while(flag){
+        if(jugada == MOVER_ARRIBA){
+            nueva_coordenada.fil -= 1;
+        } else if(jugada == MOVER_DER){
+            nueva_coordenada.col += 1;
+        } else if(jugada == MOVER_ABAJO){
+            nueva_coordenada.fil += 1;
+        } else {
+            nueva_coordenada.col -= 1;
         }
-    }
-}
-
-
-void utilizar_patines(juego_t* juego, char jugada, char terreno[MAX_FILAS][MAX_COLUMNAS]){
-    int fila_nueva = 1;
-    coordenada_t nueva_coordenada;
-    if(jugada == MOVER_ARRIBA){
-        while(terreno[nueva_coordenada.fil][nueva_coordenada.col] == POSICION_VACIA && esta_dentro_limite(nueva_coordenada)){
-            nueva_coordenada.fil = juego->mozo.posicion.fil-fila_nueva;
-            nueva_coordenada.col = juego->mozo.posicion.col;
+        if(!esta_dentro_limite(nueva_coordenada) || !puede_moverse_con_patines(terreno, nueva_coordenada)){
+            flag = false;
+        } else {
             mover_linguini(terreno, juego, nueva_coordenada);
-            printf(" %i", fila_nueva);
-            fila_nueva ++;
         }
     }
     juego->mozo.patines_puestos = false;
+    juego->mozo.cantidad_patines -= 1;
+    juego->movimientos += 1;
+}
+
+
+int inicializar_cocina_dinamica(juego_t* juego){
+    juego->cocina.platos_listos = malloc(sizeof(pedido_t));
+    juego->cocina.platos_preparacion = malloc(sizeof(pedido_t));
+    if(juego->cocina.platos_listos == NULL){
+        return ERROR_ASIGNAR_MEMORIA;
+    } else if(juego->cocina.platos_preparacion == NULL){
+        free(juego->cocina.platos_listos);
+        return ERROR_ASIGNAR_MEMORIA;
+    }
+
+    return 1;
 }
 
 // Pre:
@@ -771,19 +820,13 @@ void realizar_jugada(juego_t* juego, char accion){
         accion_de_mopa(terreno, juego);
     } else if(accion == TOMAR_PEDIDO && !linguini_tiene_mopa(juego)) {
         tomar_pedidos_mesas(juego);
-    } else if(accion == USAR_PATINES){
+    } else if(accion == ACTIVAR_PATINES && juego->mozo.cantidad_patines > 0 && !juego->mozo.tiene_mopa){
         juego->mozo.patines_puestos = true;
+    } else if(juego->mozo.patines_puestos) {
+        utilizar_patines(juego, accion, terreno);
     } else {
-        if(juego->mozo.patines_puestos){
-            utilizar_patines(juego, accion, terreno);
-        }
         mover_linguini(terreno, juego, nueva_cordenada_linguini(accion, juego));
-        if(!linguini_tiene_mopa(juego)){
-            recolectar_moneda(juego);
-            recolectar_patines(juego);
-            eliminar_cucarachas(juego);
-            eliminar_bandeja(juego);
-        } else {
+        if(linguini_tiene_mopa(juego)){
             limpiar_charco(juego);
         }
     }
@@ -796,7 +839,7 @@ void mostrar_juego(juego_t juego) {
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(&juego, terreno);
-    system("clear");
+    // system("clear");
 
     imprimir_terreno(terreno);
 
