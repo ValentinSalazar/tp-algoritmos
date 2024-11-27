@@ -14,6 +14,7 @@
 #define TOMAR_PEDIDO 'T'
 #define ACTIVAR_PATINES 'P'
 
+#define SEGUIR_JUGANDO 0
 #define JUEGO_GANADO 1
 #define JUEGO_PERDIDO -1
 
@@ -48,8 +49,7 @@ int main(){
     inicializar_juego(&juego);
     mostrar_juego(juego);
 
-
-    while(juego.movimientos < MAX_MOVIMIENTOS) {
+    while(estado_juego(juego) == SEGUIR_JUGANDO) {
         char jugada;
         do{
             solicitar_jugada(&jugada);
@@ -59,15 +59,10 @@ int main(){
         mostrar_juego(juego);
     }
 
-
-    int estado = estado_juego(juego);
-
-    if(estado == JUEGO_GANADO){
-        printf("Ganaste el juego.");
-    } else if (estado == JUEGO_PERDIDO){
-        printf("Perdiste el juego.");
-    } else {
-        printf("Sigue jugando.");
+    if(estado_juego(juego) == JUEGO_GANADO){
+        printf("Haz ganado el juego! :D");
+    } else{
+        printf("Haz perdido el juego! :(");
     }
 
     return 0;

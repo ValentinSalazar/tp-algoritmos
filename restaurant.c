@@ -161,14 +161,18 @@ mesa_t crear_mesa_compartida(coordenada_t coordenada){
     mesa_creada.cantidad_lugares = 0;
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada;
     mesa_creada.cantidad_lugares += 1;
+
     coordenada_t coordenada_secundaria = {coordenada.fil, coordenada.col + 1};
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada_secundaria;
     mesa_creada.cantidad_lugares += 1;
+
     coordenada_t coordenada_terciaria = {coordenada.fil + 1, coordenada.col};
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada_terciaria;
     mesa_creada.cantidad_lugares += 1;
+
     coordenada_t coordenada_cuarta = {coordenada.fil + 1, coordenada.col + 1};
     mesa_creada.posicion[mesa_creada.cantidad_lugares] = coordenada_cuarta;
+
     mesa_creada.cantidad_lugares += 1;
     mesa_creada.cantidad_comensales = 0;
     mesa_creada.paciencia = 0;
@@ -254,8 +258,11 @@ void inicializar_cocina(juego_t* juego, char terreno[MAX_FILAS][MAX_COLUMNAS]){
     cocina_t cocina;
     cocina.posicion = coordenada;
     juego->cocina = cocina;
+    juego->cocina.cantidad_listos = 0;
+    juego->cocina.cantidad_preparacion = 0;
+    juego->cocina.platos_listos = NULL;
+    juego->cocina.platos_preparacion = NULL;
     terreno[cocina.posicion.fil][cocina.posicion.col] = COCINA;
-
 }
 
 
@@ -435,24 +442,27 @@ void eliminar_bandeja(juego_t* juego){
 // Post: Verificará que la posición nueva del personaje sea valida (no puede subirse a una mesa ni estar por fuera de los limites).
 //      En caso de que sea valida, entonces le asignará esa nueva coordenada al personaje y aumentará la cantidad de movimientos realizados.
 void mover_linguini(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego, coordenada_t nueva_coordenada){
-    char posicion_nueva = terreno[nueva_coordenada.fil][nueva_coordenada.col];
-    bool es_mesa = posicion_nueva == MESA;
-    bool es_mesa_ocupada = posicion_nueva == MESA_OCUPADA;
     bool dentro_limite = esta_dentro_limite(nueva_coordenada);
-    bool mozo_tiene_mopa = juego->mozo.tiene_mopa;
-    if((!es_mesa && !es_mesa_ocupada) && dentro_limite) {
-        juego->mozo.posicion = nueva_coordenada;
-        if(!juego->mozo.patines_puestos){
-            juego->movimientos += 1;
-            disminuir_paciencia_mesas(juego);
-        }
-        if(!mozo_tiene_mopa){
-            recolectar_moneda(juego);
-            recolectar_patines(juego);
-            eliminar_cucarachas(juego);
-            eliminar_bandeja(juego);
+    if(dentro_limite == true){
+        char posicion_nueva = terreno[nueva_coordenada.fil][nueva_coordenada.col];
+        bool es_mesa = posicion_nueva == MESA;
+        bool es_mesa_ocupada = posicion_nueva == MESA_OCUPADA;
+        bool mozo_tiene_mopa = juego->mozo.tiene_mopa;
+        if((!es_mesa && !es_mesa_ocupada) && dentro_limite) {
+            juego->mozo.posicion = nueva_coordenada;
+            if(!juego->mozo.patines_puestos){
+                juego->movimientos += 1;
+                disminuir_paciencia_mesas(juego);
+            }
+            if(!mozo_tiene_mopa){
+                recolectar_moneda(juego);
+                recolectar_patines(juego);
+                eliminar_cucarachas(juego);
+                eliminar_bandeja(juego);
+            }
         }
     }
+
 }
 
 // Pre: La jugada que ingresa por parametro debe ser valida (W,A,S,D) y el juego debe estar inicializado, especialmente la posición del mozo.
@@ -488,15 +498,21 @@ coordenada_t nueva_cordenada_linguini(char jugada, juego_t* juego){
 //      En caso de que sea la misma, entonces retornará true. En caso contrario, retornará falso.
 bool es_posicion_ocupada(juego_t* juego, coordenada_t coordenada){
     bool es_ocupada = false;
-    for(int i = 1; i < juego->cantidad_herramientas; i++){
+    int i = 0;
+
+    while(i < juego->cantidad_herramientas){
         if(juego->herramientas[i].posicion.fil == coordenada.fil && juego->herramientas[i].posicion.col == coordenada.col){
             es_ocupada = true;
         }
+        i++;
     }
-    for(int j = 0; j < juego->cantidad_obstaculos; j++){
+
+    int j = 0;
+    while(j < juego->cantidad_obstaculos){
         if(juego->obstaculos[j].posicion.fil == coordenada.fil && juego->obstaculos[j].posicion.col == coordenada.col) {
             es_ocupada = true;
         }
+        j++;
     }
     return es_ocupada;
 }
@@ -529,15 +545,16 @@ void agregar_mopa(juego_t* juego){
 //      En caso de que ya tenga la mopa, entonces dejará la mopa en la posición en la que se encuentre (con sus reestricciones),
 //      y se actualizará la posición de la mopa en donde la dejo el personaje.
 void accion_de_mopa(char terreno[MAX_FILAS][MAX_COLUMNAS], juego_t* juego){
+    bool misma_coordenada_mopa, tiene_mopa, misma_coordenada_cocina, espacio_vacio, misma_coordenada_herramientas;
     int indice_mopa = buscar_indice_mopa(juego);
     coordenada_t* coordenada_mopa = &(juego->herramientas[indice_mopa].posicion);
     coordenada_t* coordenada_personaje = &(juego->mozo.posicion);
     coordenada_t* coordenada_cocina = &(juego->cocina.posicion);
-    bool misma_coordenada_mopa = coordenada_personaje->fil == coordenada_mopa->fil && coordenada_personaje->col == coordenada_mopa->col;
-    bool tiene_mopa = juego->mozo.tiene_mopa == true;
-    bool misma_coordenada_cocina = coordenada_personaje->fil == coordenada_cocina->fil && coordenada_personaje->col == coordenada_cocina->col;
-    bool espacio_vacio = terreno[coordenada_personaje->fil][coordenada_personaje->col] == PERSONAJE;
-    bool misma_coordenada_herramientas = es_posicion_ocupada(juego, *coordenada_personaje);
+    misma_coordenada_mopa = coordenada_personaje->fil == coordenada_mopa->fil && coordenada_personaje->col == coordenada_mopa->col;
+    tiene_mopa = juego->mozo.tiene_mopa == true;
+    misma_coordenada_cocina = coordenada_personaje->fil == coordenada_cocina->fil && coordenada_personaje->col == coordenada_cocina->col;
+    espacio_vacio = terreno[coordenada_personaje->fil][coordenada_personaje->col] == PERSONAJE;
+    misma_coordenada_herramientas = es_posicion_ocupada(juego, *coordenada_personaje);
     if(misma_coordenada_mopa && !tiene_mopa) {
         eliminar_mopa(juego);
         juego->mozo.tiene_mopa = true;
@@ -565,6 +582,7 @@ int encontrar_mesa_vacia(juego_t* juego, int lugares){
 // -> Falta agregar los pre y post.
 void asignar_comensales(juego_t* juego){
     int cantidad_comensales = rand() % 4 + 1;
+    printf("comensales creados: %i", cantidad_comensales);
     int indice_mesa_vacia;
     if(cantidad_comensales == MIN_COMENSALES){
         indice_mesa_vacia = encontrar_mesa_vacia(juego, MIN_COMENSALES);
@@ -583,11 +601,24 @@ void asignar_comensales(juego_t* juego){
     }
 }
 
+void liberar_pedido_de_preparacion(juego_t* juego, mesa_t mesa){
+    for(int i = 0; i < juego->cocina.cantidad_preparacion; i++){
+        for(int j = 0; j < juego->cantidad_mesas; j++){
+            if(juego->mesas[j].pedido_tomado && juego->cocina.platos_preparacion[i].id_mesa == j){
+                juego->cocina.platos_preparacion[i] = juego->cocina.platos_preparacion[juego->cocina.cantidad_preparacion - 1];
+                juego->cocina.cantidad_preparacion -= 1;
+            }
+        }
+    }
+}
+
 void desocupar_mesa(juego_t* juego){
     int i = 0;
     while(i < juego->cantidad_mesas) {
         if(juego->mesas[i].paciencia == 0 && juego->mesas[i].cantidad_comensales > 0){
             juego->mesas[i].cantidad_comensales = MESA_VACIA;
+            juego->mesas[i].pedido_tomado = false;
+            liberar_pedido_de_preparacion(juego, juego->mesas[i]);
             if(juego->mozo.cantidad_pedidos > 0){
                juego->mozo.cantidad_pedidos --;
             }
@@ -602,7 +633,7 @@ void calcular_tiempo_preparacion(int* tiempo_actual, int* tiempo_mayor){
     }
 }
 
-void asignar_pedido_en_bandeja(juego_t* juego, mesa_t* mesa, int indice_mesa){
+void asignar_pedido(juego_t* juego, mesa_t* mesa, int indice_mesa){
     pedido_t pedido;
     pedido.cantidad_platos = 0;
     pedido.id_mesa = indice_mesa;
@@ -646,7 +677,7 @@ void tomar_pedidos_mesas(juego_t* juego){
             bool tiene_espacio_en_bandeja = juego->mozo.cantidad_pedidos < MAX_PEDIDOS;
             bool mesa_tiene_pedido = juego->mesas[i].pedido_tomado;
             if(distancia == 1 && tiene_espacio_en_bandeja && hay_comensales_en_mesa && !mesa_tiene_pedido){
-                asignar_pedido_en_bandeja(juego, &juego->mesas[i], i);
+                asignar_pedido(juego, &juego->mesas[i], i);
                 juego->mesas[i].pedido_tomado = true;
             }
             j++;
@@ -704,22 +735,49 @@ void utilizar_patines(juego_t* juego, char jugada, char terreno[MAX_FILAS][MAX_C
     juego->movimientos += 1;
 }
 
-
-int inicializar_cocina_dinamica(juego_t* juego){
-    juego->cocina.platos_listos = malloc(sizeof(pedido_t));
-    juego->cocina.platos_preparacion = malloc(sizeof(pedido_t));
-    if(juego->cocina.platos_listos == NULL){
-        printf("Error al asignar memoria para los platos listos.");
-        return ERROR_ASIGNAR_MEMORIA;
-    } else if(juego->cocina.platos_preparacion == NULL){
-        printf("Error al asignar memoria para los platos en preparación");
-        free(juego->cocina.platos_listos);
-        return ERROR_ASIGNAR_MEMORIA;
+void asignar_pedidos_a_cocina(juego_t* juego){
+    coordenada_t coordenada_personaje = juego->mozo.posicion;
+    coordenada_t coordenada_cocina = juego->cocina.posicion;
+    bool misma_coordenada_cocina = coordenada_personaje.fil == coordenada_cocina.fil && coordenada_personaje.col == coordenada_cocina.col;
+    bool cantidad_pedidos = juego->mozo.cantidad_pedidos;
+    if(misma_coordenada_cocina && cantidad_pedidos > 0){
+        juego->cocina.platos_preparacion = realloc(juego->cocina.platos_preparacion, sizeof(pedido_t) * (size_t)(juego->cocina.cantidad_preparacion + juego->mozo.cantidad_pedidos));
+        if(juego->cocina.platos_preparacion == NULL){
+            return;
+        }
+        for(int i = 0; i < juego->mozo.cantidad_pedidos; i++){
+            juego->cocina.platos_preparacion[juego->cocina.cantidad_preparacion] = juego->mozo.pedidos[i];
+            juego->cocina.cantidad_preparacion += 1;
+        }
+        juego->mozo.cantidad_pedidos = 0;
     }
-    return 1;
 }
 
+// int inicializar_cocina_dinamica(juego_t* juego){
+//     juego->cocina.platos_listos = malloc(sizeof(pedido_t));
+//     juego->cocina.platos_preparacion = malloc(sizeof(pedido_t));
+//     if(juego->cocina.platos_listos == NULL){
+//         printf("Error al asignar memoria para los platos listos.");
+//         return ERROR_ASIGNAR_MEMORIA;
+//     } else if(juego->cocina.platos_preparacion == NULL){
+//         printf("Error al asignar memoria para los platos en preparación");
+//         free(juego->cocina.platos_listos);
+//         return ERROR_ASIGNAR_MEMORIA;
+//     }
+//     return 1;
+// }
 
+void destruir_juego(juego_t* juego) {
+    if(juego->cocina.platos_listos == NULL){
+        return;
+    }
+    free(juego->cocina.platos_listos);
+
+    if(juego->cocina.platos_preparacion == NULL){
+        return;
+    }
+    free(juego->cocina.platos_preparacion);
+}
 
 // Pre:
 // Post: Simulando un terreno representado por la matriz de MAX_FILAS x MAX_COLUMNAS, se inicializaran todos los objetos del juego.
@@ -753,13 +811,17 @@ void realizar_jugada(juego_t* juego, char accion){
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(juego, terreno);
+
     if(juego->movimientos % 15 == 0) {
         asignar_comensales(juego);
     }
+
     if(juego->movimientos >= 25 && juego->movimientos % 25 == 0){
         inicializar_obstaculo(CUCARACHA, terreno, juego);
     }
+
     desocupar_mesa(juego);
+    asignar_pedidos_a_cocina(juego);
 
     if(accion == ACCION_MOPA) {
         accion_de_mopa(terreno, juego);
@@ -784,32 +846,33 @@ void mostrar_juego(juego_t juego) {
     char terreno[MAX_FILAS][MAX_COLUMNAS];
     inicializar_terreno(terreno);
     posicionar_elementos_terreno(&juego, terreno);
-    system("clear");
+    // system("clear");
 
     imprimir_terreno(terreno);
     printf("\n");
-    printf("Cantidad de movimientos: %i de %i\n", juego.movimientos, MAX_MOVIMIENTOS);
-    printf("Cantidad Pedidos: %i\n", juego.mozo.cantidad_pedidos);
-    printf("Cantidad Patines: %i\n", juego.mozo.cantidad_patines);
-    printf("Cantidad en Bandeja: %i\n", juego.mozo.cantidad_bandeja);
+    printf("🔢 Cantidad de movimientos: %i de %i\n", juego.movimientos, MAX_MOVIMIENTOS);
+    printf("🗒️  Cantidad Pedidos: %i\n", juego.mozo.cantidad_pedidos);
+    printf("🛼 Cantidad Patines: %i\n", juego.mozo.cantidad_patines);
+    printf("🛒 Cantidad en Bandeja: %i\n", juego.mozo.cantidad_bandeja);
+    printf("🍳 Cantidad de Platos en Preparación: %i\n", juego.cocina.cantidad_preparacion);
+    printf("✅ Cantidad de Platos Listos: %i\n", juego.cocina.cantidad_listos);
     if(juego.mozo.patines_puestos){
         printf("El mozo tiene los patines puestos.\n");
     } else {
         printf("El mozo NO tiene los patines puestos.\n");
     }
-    printf("Dinero: %i\n", juego.dinero);
+    printf("💰 Dinero: %i\n", juego.dinero);
 }
 
 // Pre: El juego que viene por parametro debe estar previamente inicializado.
 // Post: Dependiendo del dinero que junto el personaje, retornará JUEGO_GANADO si alcanzo el dinero suficiente.
 //      Retornará JUEGO_PERDIDO si no lo hizo. Retornará SEGUIR_JUGANDO, si debe seguir jugando.
 int estado_juego(juego_t juego){
-    int dinero_acumulado = juego.dinero;
     int estado = SEGUIR_JUGANDO;
-    if(dinero_acumulado >= MONEDAS_GANAR_JUEGO) {
-        estado = JUEGO_GANADO;
-    } else {
+    if(juego.movimientos == 200 && juego.dinero < MONEDAS_GANAR_JUEGO){
         estado = JUEGO_PERDIDO;
+    } else if(juego.movimientos == 200 && juego.dinero >= MONEDAS_GANAR_JUEGO){
+        estado = JUEGO_GANADO;
     }
     return estado;
 }
